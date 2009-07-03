@@ -19,27 +19,27 @@
 				"box" : 				{
 					"maxclass" : "message",
 					"text" : "disconnect",
-					"fontname" : "Monaco",
+					"patching_rect" : [ 32.0, 56.0, 71.0, 18.0 ],
+					"fontsize" : 10.0,
 					"numinlets" : 2,
 					"numoutlets" : 1,
-					"fontsize" : 10.0,
-					"id" : "obj-3",
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 32.0, 56.0, 71.0, 18.0 ]
+					"fontname" : "Monaco",
+					"id" : "obj-3"
 				}
 
 			}
 , 			{
 				"box" : 				{
 					"maxclass" : "message",
-					"text" : "connect localhost 8000",
-					"fontname" : "Monaco",
+					"text" : "connect localhost 22",
+					"patching_rect" : [ 8.0, 8.0, 131.0, 18.0 ],
+					"fontsize" : 10.0,
 					"numinlets" : 2,
 					"numoutlets" : 1,
-					"fontsize" : 10.0,
-					"id" : "obj-2",
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 8.0, 8.0, 143.0, 18.0 ]
+					"fontname" : "Monaco",
+					"id" : "obj-2"
 				}
 
 			}
@@ -47,19 +47,19 @@
 				"box" : 				{
 					"maxclass" : "newobj",
 					"text" : "tcpclient",
-					"fontname" : "Monaco",
+					"patching_rect" : [ 8.0, 88.0, 65.0, 20.0 ],
+					"fontsize" : 10.0,
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"fontsize" : 10.0,
-					"id" : "obj-1",
-					"patching_rect" : [ 8.0, 88.0, 65.0, 20.0 ]
+					"fontname" : "Monaco",
+					"id" : "obj-1"
 				}
 
 			}
  ],
 		"lines" : [ 			{
 				"patchline" : 				{
-					"source" : [ "obj-3", 0 ],
+					"source" : [ "obj-2", 0 ],
 					"destination" : [ "obj-1", 0 ],
 					"hidden" : 0,
 					"midpoints" : [  ]
@@ -68,7 +68,7 @@
 			}
 , 			{
 				"patchline" : 				{
-					"source" : [ "obj-2", 0 ],
+					"source" : [ "obj-3", 0 ],
 					"destination" : [ "obj-1", 0 ],
 					"hidden" : 0,
 					"midpoints" : [  ]

@@ -1,9 +1,9 @@
 General Idea
 ============
 
-- Get the latest and greates pySick
-- Find it working with SickViz2 / SickOSC
-- Start SickExternal patch that can talk to SickViz2 
++ Get the latest and greates pySick
++ Find it working with SickViz2 / SickOSC
+- Start SickExternal patch that can talk to SickViz2
   (using the same OSC messages internally)
 - Get SickExternal to produce the same results as pySick
 
@@ -11,18 +11,34 @@ Architecture
 ============
 
  * [tcpclient host port]
-   * creates a tcp socket to given host:port, allows sending things to and receiving things from
-   * can send messages in ascii, with configurable line terminator
+   * creates a tcp socket to given host:port, allows sending things to and
+     receiving things from
+   * can send messages in ascii, with configurable line prefix/postfix
    * can receive messages in ascii, -->>--
-   * another mode: fixed size buffer in/out. For this to work there must exist objects to form / 
-     parse binary streams. should decide on the format of messages.
 
-   Ref: 
+   Ref:
    * socket(), setsockopt(), getsockopt()
    * fcntl() to set to non-blocking
    * Max clock or qelem to schedule the polling
    * sending: use qelem or defer to schedule sending in low-prio thread
-        
+   * http://cs.baylor.edu/~donahoo/practical/CSockets/textcode.html
+   * http://artm.pastebay.com/26902
+
+   * Consider alternatives
+     * Norm Jaffe's tcp objects for max4.6
+       * they don't work in Max5 but try to emulate as close as possible
+     * jit.net.* - can't use, they enforce protocol.
+
+ * [sick.parse]
+   * receives data from tcpclient (binary or ascii), parses and sends further as
+     max messages / jitter matrices
+   * may buffer chunked data from the tcp stream
+
+ * [sick.wrap]
+   * receives max messages / jitter matrices and converts to tcpclient ready
+     format
+
+probably switchable ascii/binary mode.
 
 Implications
 ============
@@ -30,7 +46,7 @@ Implications
 - either poll with tiny timeout (or 0) each time Max allows us, or
   run in separate thread / process with all the implications.
 - best would be to write to some jit.matrices.
-- WARNING: polling the server with python didn't do the right thing on osx in 
+- WARNING: polling the server with python didn't do the right thing on osx in
   tuio-noise.
 
 First experiments
@@ -38,17 +54,20 @@ First experiments
 
 establish the connection:
 
-- manually set local ethernet connection to 192.168.0.123, 
+- manually set local ethernet connection to 192.168.0.123,
   subnet mask 255.255.255.0
+  - location SICK in network properties
 - talk to TCP 2111
 - listen on the same socket
 - e.g. telnet
+  - not really. have to figure out start/stop characters.
 
-logging: 
+logging:
 
 - wireshark
-- capture filter: tcp
-- display filter: tcp.port == 2111
+- capture filter: tcp port 2111
+  - something doesn't work, but 'tcp' on that interface is OK
+    - port is 2112, why?
 
 send there:
 
@@ -63,7 +82,7 @@ send there:
   - LENGTH bytes DATA
   - 1 byte "CHECKSUM" (XOR of all bytes of DATA)
 
-Example 
-> sMN LMCstartmeas 
-< sAN LMCstartmeas 0 
+Example
+> sMN LMCstartmeas
+< sAN LMCstartmeas 0
 
