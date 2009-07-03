@@ -1,0 +1,69 @@
+General Idea
+============
+
+- Get the latest and greates pySick
+- Find it working with SickViz2 / SickOSC
+- Start SickExternal patch that can talk to SickViz2 
+  (using the same OSC messages internally)
+- Get SickExternal to produce the same results as pySick
+
+Architecture
+============
+
+ * [tcpclient host port]
+   * creates a tcp socket to given host:port, allows sending things to and receiving things from
+   * can send messages in ascii, with configurable line terminator
+   * can receive messages in ascii, -->>--
+   * another mode: fixed size buffer in/out. For this to work there must exist objects to form / 
+     parse binary streams. should decide on the format of messages.
+
+   Ref: 
+   * socket(), setsockopt(), getsockopt()
+   * fcntl() to set to non-blocking
+   * Max clock or qelem to schedule the polling
+   * sending: use qelem or defer to schedule sending in low-prio thread
+        
+
+Implications
+============
+
+- either poll with tiny timeout (or 0) each time Max allows us, or
+  run in separate thread / process with all the implications.
+- best would be to write to some jit.matrices.
+- WARNING: polling the server with python didn't do the right thing on osx in 
+  tuio-noise.
+
+First experiments
+=================
+
+establish the connection:
+
+- manually set local ethernet connection to 192.168.0.123, 
+  subnet mask 255.255.255.0
+- talk to TCP 2111
+- listen on the same socket
+- e.g. telnet
+
+logging: 
+
+- wireshark
+- capture filter: tcp
+- display filter: tcp.port == 2111
+
+send there:
+
+- ascii packet:
+  - 1 byte: STX (start of text?)
+  - ASCII text
+  - 1 byte: ETX (end of text?)
+
+- binary packet:
+  - 4x STX
+  - 4 byte: LENGTH (big endian uint32?)
+  - LENGTH bytes DATA
+  - 1 byte "CHECKSUM" (XOR of all bytes of DATA)
+
+Example 
+> sMN LMCstartmeas 
+< sAN LMCstartmeas 0 
+
