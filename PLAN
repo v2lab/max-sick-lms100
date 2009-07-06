@@ -1,11 +1,11 @@
 General Idea
 ============
 
-+ Get the latest and greates pySick
-+ Find it working with SickViz2 / SickOSC
-- Start SickExternal patch that can talk to SickViz2
++ Get the latest and greates pySick (BlobServer)
++ Find it working with SickViz3
+- Start SickExternal patch that can talk to SickViz3
   (using the same OSC messages internally)
-- Get SickExternal to produce the same results as pySick
+- Get SickExternal to produce the same results as parts of BlobServer
 
 Architecture
 ============
@@ -29,17 +29,11 @@ Architecture
        * they don't work in Max5 but try to emulate as close as possible
      * jit.net.* - can't use, they enforce protocol.
 
- * [sick.parse]
-   * receives data from tcpclient (binary or ascii), parses and sends further as
-     max messages / jitter matrices
-   * may buffer chunked data from the tcp stream
-
- * [sick.wrap]
-   * receives max messages / jitter matrices and converts to tcpclient ready
-     format
-   * at the moment tcpclient does this hardwiredly
-
-probably switchable ascii/binary mode.
+ * [sick.lms1xx]
+   * creates tcpclient internally
+   * sets it up with messages
+   * implements sane message protocol
+   * converts scanned data to jitter matrices
 
 Implications
 ============
