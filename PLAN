@@ -37,6 +37,7 @@ Architecture
  * [sick.wrap]
    * receives max messages / jitter matrices and converts to tcpclient ready
      format
+   * at the moment tcpclient does this hardwiredly
 
 probably switchable ascii/binary mode.
 
@@ -91,5 +92,5 @@ NOW
 
 [x] make socket nonblocking
 [x] bootstrap qelem
-[ ] collect data from stx to etx
+[-] collect data from stx to etx
 
