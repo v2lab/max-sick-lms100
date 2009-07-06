@@ -90,7 +90,11 @@ Example
 NOW
 ===
 
-[x] make socket nonblocking
-[x] bootstrap qelem
-[-] collect data from stx to etx
+[ ] describe the parser: which messages should go where
+
+FAR FUTURE
+==========
+
+[ ] check sanity of the format conversion values
+
 

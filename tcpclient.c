@@ -220,35 +220,101 @@ void tcpclient_send(t_tcpclient * self, t_symbol * s, long argc, t_atom * argv)
 
 void tcpclient_recv(t_tcpclient * self)
 {
-    static size_t buffer_max_size = 8000;
-    static char buffer[8000];
-    size_t buffer_size = 0;
+#define RCV_BUFFER_SIZE 8000
+    static char buffer[RCV_BUFFER_SIZE]; // should be enough for longest data
+    static int write_pos = 0;
+    int parse_pos;
     int recvd = 0;
-    t_atom reply;
 
     if (self->sock < 0) {
+        error("tcpclient: attempt to receive while not connected\n");
         return;
     }
-    recvd = recv(self->sock, buffer, buffer_max_size - 1, 0);
 
-    if (recvd < 0) {
-        if (errno == EAGAIN)
-            // nothing received
-            goto keep_polling;
-        error("tcpclient: error receiving data\n");
-        post_os_error("tcpclient");
-        return;
-    } else if (recvd == 0) {
-        post("tcpclient: connection closed by the server\n");
-        tcpclient_disconnect(self);
-        return;
+    /* TODO this should really be done by custom setter/getters for stx/etx */
+    char stx[MAX_APPENDIX_LEN+1], etx[MAX_APPENDIX_LEN+1];
+    if (self->stxLen) {
+        memcpy(stx,self->stx,self->stxLen);
+        stx[self->stxLen] = 0;
     }
-    buffer[recvd] = 0;
+    if (self->etxLen) {
+        memcpy(etx,self->etx,self->etxLen);
+        etx[self->etxLen] = 0;
+    }
 
-    atom_setsym(&reply, gensym(buffer));
-    outlet_anything(self->out, gensym("reply"), 1, &reply);
+    do {
+        // pump data while available
+        while (write_pos < (RCV_BUFFER_SIZE - 1)) {
+            recvd = recv(self->sock, buffer + write_pos, RCV_BUFFER_SIZE - write_pos - 1, 0);
 
-keep_polling:
+            if (recvd < 0) {
+                if (errno == EAGAIN)
+                    break;
+                else {
+                    error("tcpclient: error receiving data\n");
+                    post_os_error("tcpclient");
+                    return;
+                }
+            } else if (recvd == 0) {
+                post("tcpclient: connection closed by the server\n");
+                tcpclient_disconnect(self);
+                return;
+            }
+
+            write_pos += recvd;
+        }
+        buffer[write_pos] = 0;
+
+        // send all full messages
+        parse_pos = 0;
+        while(parse_pos < write_pos) {
+            t_atom reply;
+            int stx_pos, etx_pos;
+            char cp_buffer[RCV_BUFFER_SIZE];
+            int msg_len;
+
+            // confirm stx
+            if (self->stxLen) {
+                char * stx_found = strnstr(buffer+parse_pos, stx, (write_pos-parse_pos));
+                if (!stx_found || (stx_found != buffer+parse_pos)) {
+                    error("tcpclient: stx missing, skipping\n");
+                    if (!stx_found) {
+                        // discard buffer
+                        write_pos = 0;
+                        break;
+                    }
+                }
+                parse_pos = (stx_found-buffer)+self->stxLen;
+            }
+
+            // find etx
+            if (self->etxLen) {
+                char * etx_found = strnstr(buffer+parse_pos, etx, write_pos-parse_pos);
+                if (!etx_found) {
+                    // move remainder upfront
+                    memmove(buffer,buffer+parse_pos,write_pos-parse_pos);
+                    break;
+                }
+                msg_len = etx_found - buffer - parse_pos;
+            } else
+                msg_len = write_pos - parse_pos;
+
+            // copy and send
+            memcpy(cp_buffer,buffer+parse_pos,msg_len);
+            cp_buffer[msg_len] = 0;
+
+            atom_setsym(&reply, gensym(cp_buffer));
+            outlet_anything(self->out, gensym("reply"), 1, &reply);
+
+            // advance parse_pos
+            parse_pos += msg_len + self->etxLen;
+        }
+
+        // set write_pos to the end of remainder if any
+        write_pos = write_pos - parse_pos;
+    } while(recvd>0);
+
+    // continue polling
     qelem_set(self->recvQueue);
 }
 
