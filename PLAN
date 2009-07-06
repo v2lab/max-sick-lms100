@@ -54,11 +54,11 @@ First experiments
 
 establish the connection:
 
-- manually set local ethernet connection to 192.168.0.123,
+- manually set local ethernet iface to 192.168.0.123,
   subnet mask 255.255.255.0
   - location SICK in network properties
-- talk to TCP 2111
-- listen on the same socket
+- talk to TCP 2111 (2112?)
+- receive on the same socket
 - e.g. telnet
   - not really. have to figure out start/stop characters.
 
@@ -85,4 +85,11 @@ send there:
 Example
 > sMN LMCstartmeas
 < sAN LMCstartmeas 0
+
+NOW
+===
+
+[x] make socket nonblocking
+[x] bootstrap qelem
+[ ] collect data from stx to etx
 

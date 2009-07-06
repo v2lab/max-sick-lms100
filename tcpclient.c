@@ -19,6 +19,7 @@ typedef struct t_tcpclient
     char stx[MAX_APPENDIX_LEN], etx[MAX_APPENDIX_LEN];
 
     void * out;
+    void * recvQueue;
 } t_tcpclient;
 
 static t_class * s_tcpclient_class = 0;
@@ -27,6 +28,9 @@ void * tcpclient_new();
 void tcpclient_connect(t_tcpclient * self, t_symbol * sym, long port);
 void tcpclient_disconnect(t_tcpclient * self);
 void tcpclient_send(t_tcpclient *x, t_symbol *s, long argc, t_atom *argv);
+void tcpclient_recv(t_tcpclient * self);
+
+void post_os_error(char * prefix);
 
 int main()
 {
@@ -59,6 +63,7 @@ void * tcpclient_new()
     x->etxLen = 0;
 
     x->out = outlet_new(x,NULL);
+    x->recvQueue = qelem_new((t_object *)x, (method)tcpclient_recv);
     return x;
 }
 
@@ -70,12 +75,14 @@ void tcpclient_connect(t_tcpclient * self, t_symbol * sym, long port)
     // assert sym!=null
     // assert 0 < port < 0xffff
     if ((host = gethostbyname(sym->s_name)) == NULL) {
-        post("tcpclient: can't resolve %s\n", sym->s_name);
+        error("tcpclient: can't resolve %s\n", sym->s_name);
+        post_os_error("tcpclient");
         return;
     }
 
     if ((self->sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-        post("tcpclient: can't create socket\n");
+        error("tcpclient: can't create socket\n");
+        post_os_error("tcpclient");
         return;
     }
 
@@ -85,11 +92,21 @@ void tcpclient_connect(t_tcpclient * self, t_symbol * sym, long port)
     addr.sin_port        = htons(port);
 
     if (connect(self->sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-        post("tcpclient: error connecting to %s:%d\n", sym->s_name, port);
-        // this cleans up the socket even though we haven't connect
+        error("tcpclient: error connecting to %s:%d\n", sym->s_name, port);
+        post_os_error("tcpclient");
+        // this cleans the socket up even though we haven't connected
         tcpclient_disconnect(self);
         return;
     }
+
+    if (fcntl(self->sock, F_SETFL, O_NONBLOCK) < 0) {
+        error("tcpclient: couldn't make socket non blocking\n");
+        post_os_error("tcpclient");
+        tcpclient_disconnect(self);
+        return;
+    }
+
+    qelem_set(self->recvQueue);
 
     post("tcpclient: connected to %s:%d\n", sym->s_name, port);
 }
@@ -100,8 +117,9 @@ void tcpclient_disconnect(t_tcpclient * self)
     if (self->sock > 0) {
         close(self->sock);
         self->sock = -1;
+        qelem_unset(self->recvQueue);
     } else {
-        post("tcpclient: already disconnected\n");
+        error("tcpclient: already disconnected\n");
     }
 }
 
@@ -118,7 +136,7 @@ void tcpclient_send(t_tcpclient *x, t_symbol *s, long argc, t_atom *argv)
 
     // TODO asserts
     if (x->sock < 0) {
-        post("tcpclient: can't send, connect first\n");
+        error("tcpclient: can't send, connect first\n");
         return;
     }
 
@@ -194,7 +212,47 @@ void tcpclient_send(t_tcpclient *x, t_symbol *s, long argc, t_atom *argv)
 
     post("[%s]\n",buffer);
     if (send(x->sock, buffer, buffer_size, 0) != buffer_size) {
-        post("tcpclient: something's wrong, sent less then expected\n");
+        error("tcpclient: something's wrong, sent less then expected\n");
+        post_os_error("tcpclient");
     }
 }
+
+void tcpclient_recv(t_tcpclient * self)
+{
+    static size_t buffer_max_size = 8000;
+    static char buffer[8000];
+    size_t buffer_size = 0;
+    int recvd = 0;
+    t_atom reply;
+
+    if (self->sock < 0) {
+        return;
+    }
+    recvd = recv(self->sock, buffer, buffer_max_size - 1, 0);
+
+    if (recvd < 0) {
+        // error, or nothing received?
+        if (errno == EAGAIN) goto keep_polling;
+        error("tcpclient: error receiving data\n");
+        post_os_error("tcpclient");
+        return;
+    } else if (recvd == 0) {
+        post("tcpclient: connection closed by the server\n");
+        tcpclient_disconnect(self);
+        return;
+    }
+    buffer[recvd] = 0;
+
+    atom_setsym(&reply, gensym(buffer));
+    outlet_anything(self->out, gensym("reply"), 1, &reply);
+
+keep_polling:
+    qelem_set(self->recvQueue);
+}
+
+void post_os_error(char * prefix)
+{
+    error("%s: [%d] %s\n", prefix, errno, strerror(errno));
+}
+
 

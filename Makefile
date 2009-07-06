@@ -5,9 +5,9 @@ OBJECTS := $(OBJECTS:.cpp=.o)
 DEPS := $(SOURCES:.c=.P)
 DEPS := $(DEPS:.cpp=.P)
 
-INCLUDES := -I/Library/Frameworks/MaxAPI.framework/Headers #-I/Library/Frameworks/JitterAPI.framework/Headers 
+INCLUDES := -I/Library/Frameworks/MaxAPI.framework/Headers #-I/Library/Frameworks/JitterAPI.framework/Headers
 INCLUDES := $(INCLUDES)
-FRAMEWORKS := -framework MaxAPI #-framework JitterAPI 
+FRAMEWORKS := -framework MaxAPI #-framework JitterAPI
 
 CFLAGS := -arch i386 -pipe
 CXXFLAGS := $(CFLAGS)
@@ -28,7 +28,7 @@ tcpclient-dirs:
 	-mkdir -p tcpclient.mxo/Contents/MacOS
 .PHONY: tcpclient-dirs
 
-tcpclient.mxo/Contents/MacOS/tcpclient: $(OBJECTS)
+tcpclient.mxo/Contents/MacOS/tcpclient: tcpclient.o
 	$(LINK) -o $@ $^ $(LDFLAGS)
 
 %.o : %.cpp
@@ -50,6 +50,6 @@ tcpclient.mxo/Contents/MacOS/tcpclient: $(OBJECTS)
 $(OBJECTS): Makefile
 
 .PHONY: clean
-clean: 
+clean:
 	-rm -f *.P *.d *.o
 
