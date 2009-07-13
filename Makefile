@@ -1,27 +1,24 @@
-all: tcpclient.mxo
+# a list of externals to build
+MAKE_BUNDLES = tcpclient.mxo
 
+# default target
+.PHONY: all
+all: $(MAKE_BUNDLES)
+
+# Max externals specific
+#   TODO factor out
+BUNDLE_PKG_TYPE := iLaX
+BUNDLE_SIGNATURE := max2
+CFLAGS += -arch i386 -pipe
+CXXFLAGS += -arch i386 -pipe
+LDFLAGS += -arch i386 -bundle -mmacosx-version-min=10.4
+#   TODO framework list should be defined per bundle
+INC_FRAMEWORKS = MaxAPI
+
+# bundle details
+tcpclient_mxo_exec = tcpclient
+tcpclient: tcpclient.o
+
+# using the amake library
 include amake/auto-deps.mk
-
-INCLUDES := -I/Library/Frameworks/MaxAPI.framework/Headers
-FRAMEWORKS := -framework MaxAPI
-
-CFLAGS := -arch i386 -pipe
-CXXFLAGS := $(CFLAGS)
-
-CFLAGS := $(CFLAGS) $(INCLUDES)
-CXXFLAGS := $(CXXFLAGS) $(INCLUDES)
-
-LINK = $(CC)
-LDFLAGS := $(LDFLAGS) $(FRAMEWORKS)
-LDFLAGS := $(LDFLAGS) -arch i386 -bundle -mmacosx-version-min=10.4
-
-tcpclient.mxo: tcpclient-dirs tcpclient.mxo/Contents/MacOS/tcpclient
-.PHONY: tcpclient.mxo
-
-tcpclient-dirs:
-	-mkdir -p tcpclient.mxo/Contents/MacOS
-.PHONY: tcpclient-dirs
-
-tcpclient.mxo/Contents/MacOS/tcpclient: tcpclient.o
-	$(LINK) -o $@ $^ $(LDFLAGS)
-
+include amake/macosx.mk
