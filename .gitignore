@@ -2,8 +2,9 @@
 *.d
 *.o
 /tcpclient
-SICK-stream*
-SICK*.log
-BlobServer
-LMS*.pdf
+/SICK-stream*
+/SICK*.log
+/BlobServer
+/LMS*.pdf
 /.vim
+/*.mxo
