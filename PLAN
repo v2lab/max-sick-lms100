@@ -35,56 +35,16 @@ Architecture
    * implements sane message protocol
    * converts scanned data to jitter matrices
 
-Implications
-============
-
-- either poll with tiny timeout (or 0) each time Max allows us, or
-  run in separate thread / process with all the implications.
-- best would be to write to some jit.matrices.
-- WARNING: polling the server with python didn't do the right thing on osx in
-  tuio-noise.
-
-First experiments
-=================
-
-establish the connection:
-
-- manually set local ethernet iface to 192.168.0.123,
-  subnet mask 255.255.255.0
-  - location SICK in network properties
-- talk to TCP 2111 (2112?)
-- receive on the same socket
-- e.g. telnet
-  - not really. have to figure out start/stop characters.
-
-logging:
-
-- wireshark
-- capture filter: tcp port 2111
-  - something doesn't work, but 'tcp' on that interface is OK
-    - port is 2112, why?
-
-send there:
-
-- ascii packet:
-  - 1 byte: STX (start of text?)
-  - ASCII text
-  - 1 byte: ETX (end of text?)
-
-- binary packet:
-  - 4x STX
-  - 4 byte: LENGTH (big endian uint32?)
-  - LENGTH bytes DATA
-  - 1 byte "CHECKSUM" (XOR of all bytes of DATA)
-
-Example
-> sMN LMCstartmeas
-< sAN LMCstartmeas 0
-
 NOW
 ===
 
-[ ] describe the parser: which messages should go where
+[ ] jitter SDK documentation
+
+LATER
+=====
+
+[ ] assists
+[ ] asserts, warnings etc
 
 FAR FUTURE
 ==========
