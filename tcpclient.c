@@ -51,8 +51,6 @@ int main()
     CLASS_ATTR_SYM(c,"int_fmt",attrflags,t_tcpclient,int_fmt);
     CLASS_ATTR_SYM(c,"float_fmt",attrflags,t_tcpclient,float_fmt);
 
-    class_dumpout_wrap(c);
-
     class_register(CLASS_BOX, c);
 
     s_tcpclient_class = c;
