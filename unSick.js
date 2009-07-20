@@ -77,6 +77,8 @@ for(var req in LMS1xx.replyMap) {
 }
 // anything may reply with FA
 LMS1xx.replies.push("FA");
+// SN is yet another possible type without specific request
+LMS1xx.replies.push("SN");
 
 /********** HEX TO SIGNED INTEGER CONVERSIONS *********/
 makeU2I.local = 1;
