@@ -8,3 +8,5 @@
 /LMS*.pdf
 /.vim
 /*.mxo
+*.pcap
+messlog
