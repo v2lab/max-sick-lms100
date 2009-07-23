@@ -1,7 +1,13 @@
 /********** PARSER DESCRIPTION *********/
-var u8="u8",u16="u16",u32="u32",u64="u64",i16="i16",i32="i32",i64="i64",str="str",
-    ignore="ignore",bool={0:"false","default":"true"},nbool={0:"true","default":"false"},
-    ok0 = {0:"ok","default":"error"}, ok1 = {1:"ok","default":"error"};
+var u8="u8",u16="u16",u32="u32",u64="u64",
+    i16="i16",i32="i32",i64="i64",
+    real="real",
+    str="str",
+    ignore="ignore",
+    bool={0:0,"default":1},
+    nbool={0:1,"default":0},
+    ok0 = {0:"ok","default":"error"},
+    ok1 = {1:"ok","default":"error"};
 
 var LMS1xx = {
   'replyMap' : {
@@ -44,6 +50,7 @@ var LMS1xx = {
                 },
                 nbool,ignore,str,ignore,str,u32,u32,u32],
       'LMPscancfg': ["scan-config",u32,u8,u32,i32,i32],
+      'LMDscandata': ScanDataParser,
     },
     'AN' : {
       'GetAccessMode' :
@@ -67,6 +74,12 @@ var LMS1xx = {
           },
           u32, u8, u32, i32, i32],
 
+    },
+    'SN' : {
+      'LMDscandata' : ScanDataParser,
+    },
+    'EA' : {
+      'LMDscandata' : ["scanning", bool],
     },
   }
 };
@@ -94,6 +107,68 @@ u2i16.local = 1;
 var u2i32 = makeU2I(32);
 u2i32.local = 1;
 
+/********** HEX TO IEEE FLOAT CONVERSION *********/
+/*
+   this would be just *((float*)&long_val) in C
+   or struct.unpack('f', struct.pack('I', long_val)) in Python
+   But in javascript I need to look at them bits.
+
+   Reference:
+   http://en.wikipedia.org/wiki/IEEE_754-2008
+   http://www.psc.edu/general/software/packages/ieee/ieee.php (short and to the point,
+                                                               but bit numbers are backwards)
+   http://babbage.cs.qc.edu/IEEE-754/32bit.html (interactive)
+
+   Test values:
+     0x00000000 ::  0.0
+     0x80000000 :: -0.0 (same as 0.0 in javascript)
+     0x7F800000 ::  inf
+     0xFF800000 :: -inf
+     0x7F800001 ::  NaN
+     0xFF800001 :: -NaN (same as NaN in javascript)
+     0x12345678 ::  5.690456613903524e-28   (normalized)
+     0x87654321 :: -1.7247772618169884e-34  (-normalized)
+     0x00000001 ::  1.401298464324817e-45   (unnormalized, smallest positive value)
+     0x80000001 :: -1.401298464324817e-45   (-unnormalized)
+*/
+u2f32.local = 1;
+function u2f32(n) {
+  var F = 0x7FFFFF & n;      // fraction
+  var E = 0xFF & (n>>23);  // exponent
+  var S = n >> 31;        // sign (1 is negative)
+
+  var sfactor = (S==0) ? 1.0 : -1.0;
+
+  var frac = function() {
+    // interpret F as 23-bit binary fraction
+    var res = 0.0;
+    var val = 0.5; // weight of the current bit
+    for(var i=0; i<23; i++) {
+      if ( (F << i) & 0x400000 ) res += val;
+      val /= 2.0;
+    }
+    return res;
+  }
+
+  // some combinations are special
+  if (E==0xFF)
+    if (F==0)
+      return (S==0) ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
+    else
+      return Number.NaN;
+  else if (E==0)
+    if (F==0)
+      // return (S==0) ? 0.0 : -0.0; // don't ask
+      return 0.0; // javascript doesn't distinguish -0.0 and 0.0
+    else
+      // unnormalized float
+      return sfactor * Math.pow(2,-126) * frac(F);
+  else
+    // normal float
+    return sfactor * Math.pow(2,E-127) * (1.0 + frac(F));
+}
+
+
 /********** TYPED CONVERSION *********/
 convert.local = 1
 function convert(val,type) {
@@ -115,6 +190,10 @@ function convert(val,type) {
         break;
         case "i64":
           val = u2i64(val);
+        break;
+        // or to real
+        case "real":
+          val = u2f32(val);
         break;
       }
     } else if (val.match(/^[-+][0-9]+$/)) {
@@ -146,6 +225,104 @@ function typeError(head,types,vals) {
 }
 
 /********** PARSER LOGIC *********/
+DictParse.local = 1;
+function DictParse(msg,fields)
+{
+  var dict = {};
+  for(var i in fields) {
+    var desc = fields[i];
+    var val = msg.shift();
+    if (desc != ignore)
+      dict[desc[0]] = convert(val,desc[1]);
+  }
+  return dict;
+}
+
+dict_post.local = 1;
+function dict_post(dict,ident) {
+  if (ident==null)
+    ident = 0;
+  for(var i in dict) {
+    for(var id=0; id<ident; id++) post(' ');
+    post(i,":");
+    if (typeof(dict[i])=='object')
+      if (Array.prototype.isPrototypeOf(dict[i])) {
+        post("[");
+        post(dict[i]);
+        post("]");
+      } else {
+        post("{\n");
+        dict_post(dict[i],ident+4);
+        post("}");
+      }
+    else
+      post(dict[i]);
+    post("\n");
+  }
+}
+
+ScanDataParser.local = 1;
+function ScanDataParser(msg)
+{
+
+  post("Calling parser\n");
+  var scan_dict = DictParse(msg, [
+      ignore, ignore, // SN/RA LMDscandata
+      ["scandata-version", u16],
+      ["device-id", u16],
+      ["device-serial-number", u32],
+      ["device-status",
+        {0:"OK",1:"device error",2:"contamination warning",4:"contamination error"}],
+      ignore, // reserved and missing from documentation
+      ["message-count", u16],
+      ["scan-count", u16],
+      ["uptime", u32],
+      ["tx-time", u32],
+      ["input-status", u16],
+      ["output-status", u16],
+      ignore,ignore,ignore, // reserved, only one is documented as such
+      ["scanning-frequency", u32],
+      ["measurement-frequency", u32],
+      ["encoders-count",u8]]);
+
+  if (scan_dict["encoders-count"] > 0) {
+    scan_dict['encoders'] = [];
+    for(var i = 0; i < scan_dict['encoders-count']; i++) {
+      scan_dict['encoders'] += [ convert(msg.shift(),u32), convert(msg.shift(), u16) ];
+    }
+  }
+
+  delete scan_dict["encoders-count"];
+
+  // two sets of channels
+  var data_type = [u16, u8];
+  var channels = {};
+  for(var i = 0; i<2; i++) {
+    var nch = convert(msg.shift(), u8);
+    for(var j = 0; j<nch; j++) {
+      var chname = msg.shift();
+      channels[chname] = DictParse(msg, [
+          ["scaling-factor", real],
+          ["scaling-offset", real],
+          ["starting-angle", i32],
+          ["anglular-step", u16]]);
+      var data_len = convert(msg.shift(), u16);
+      channels[chname]["data"] = [];
+      // channel data as list
+      for(var k=0;k<data_len;k++) {
+        var v = convert(msg.shift(), data_type[i]);
+        if ((v==0) && chname.match(/^DIST/))
+          v = 0xFFFF; // laser never returned, set to max u16 (DIST is always 16-bit)
+        channels[chname]["data"].push(v);
+      }
+    }
+  }
+
+  // the reset of this message I couldn't care less about (?)
+  dict_post(scan_dict);
+  dict_post(channels);
+}
+
 function anything() {
   // either whole message in one string or split already
   var msg = messagename.match(/ /)
@@ -186,13 +363,14 @@ function anything() {
       }
       outlet(0, head, conv);
       return;
+    } else if (Function.prototype.isPrototypeOf(parser)) {
+      parser(msg);
     }
   } else {
     post("unknown reply",msg.slice(0,2),"\n");
   }
-
 }
 
 /********** MAX HOUSEKEEPING *********/
 autowatch = 1;
-
+outlets = 5;
