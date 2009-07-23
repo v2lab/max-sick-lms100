@@ -238,8 +238,8 @@ function DictParse(msg,fields)
   return dict;
 }
 
-dict_post.local = 1;
-function dict_post(dict,ident) {
+PrettyPost.local = 1;
+function PrettyPost(dict,ident) {
   if (ident==null)
     ident = 0;
   for(var i in dict) {
@@ -252,7 +252,7 @@ function dict_post(dict,ident) {
         post("]");
       } else {
         post("{\n");
-        dict_post(dict[i],ident+4);
+        PrettyPost(dict[i],ident+4);
         post("}");
       }
     else
@@ -264,8 +264,6 @@ function dict_post(dict,ident) {
 ScanDataParser.local = 1;
 function ScanDataParser(msg)
 {
-
-  post("Calling parser\n");
   var scan_dict = DictParse(msg, [
       ignore, ignore, // SN/RA LMDscandata
       ["scandata-version", u16],
@@ -305,11 +303,12 @@ function ScanDataParser(msg)
           ["scaling-factor", real],
           ["scaling-offset", real],
           ["starting-angle", i32],
-          ["anglular-step", u16]]);
-      var data_len = convert(msg.shift(), u16);
+          ["anglular-step", u16],
+          ["data-size", u16]
+        ]);
       channels[chname]["data"] = [];
       // channel data as list
-      for(var k=0;k<data_len;k++) {
+      for(var k=0;k<channels[chname]["data-size"];k++) {
         var v = convert(msg.shift(), data_type[i]);
         if ((v==0) && chname.match(/^DIST/))
           v = 0xFFFF; // laser never returned, set to max u16 (DIST is always 16-bit)
@@ -319,8 +318,11 @@ function ScanDataParser(msg)
   }
 
   // the reset of this message I couldn't care less about (?)
-  dict_post(scan_dict);
-  dict_post(channels);
+  //PrettyPost(scan_dict);
+  //PrettyPost(channels);
+  for(chname in channels) {
+    outlet(0,chname,channels[chname]["data"]);
+  }
 }
 
 function anything() {
@@ -361,7 +363,7 @@ function anything() {
         if (types[i] != ignore)
           conv.push( convert(vals[i], types[i]) );
       }
-      outlet(0, head, conv);
+      outlet(1, head, conv);
       return;
     } else if (Function.prototype.isPrototypeOf(parser)) {
       parser(msg);
@@ -373,4 +375,4 @@ function anything() {
 
 /********** MAX HOUSEKEEPING *********/
 autowatch = 1;
-outlets = 5;
+outlets = 2;
