@@ -319,10 +319,9 @@ function ScanDataParser(msg)
     }
   }
 
-  // the reset of this message I couldn't care less about (?)
-  //PrettyPost(scan_dict);
-  //PrettyPost(channels);
+  // the rest of this message I couldn't care less about (?)
   for(chname in channels) {
+    outlet(1,"data-size",channels[chname]["data-size"]);
     outlet(0,chname,channels[chname]["data"]);
   }
 }

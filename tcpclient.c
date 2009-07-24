@@ -218,11 +218,16 @@ void tcpclient_send(t_tcpclient * self, t_symbol * s, long argc, t_atom * argv)
 
 void tcpclient_recv(t_tcpclient * self)
 {
-#define RCV_BUFFER_SIZE 8000
+#define RCV_BUFFER_SIZE 65536
     static char buffer[RCV_BUFFER_SIZE]; // should be enough for longest data
     static int write_pos = 0;
     int parse_pos;
     int recvd = 0;
+
+    // stats
+    int stats_recvd = 0;
+    int stats_messages = 0;
+    int stats_parsed = 0;
 
     if (self->sock < 0) {
         error("tcpclient: attempt to receive while not connected\n");
@@ -260,10 +265,10 @@ void tcpclient_recv(t_tcpclient * self)
             }
 
             write_pos += recvd;
+            stats_recvd += recvd;
         }
-        buffer[write_pos] = 0;
 
-        // send all full messages
+        // find and output all full messages
         parse_pos = 0;
         while(parse_pos < write_pos) {
             t_atom reply;
@@ -273,44 +278,73 @@ void tcpclient_recv(t_tcpclient * self)
 
             // confirm stx
             if (self->stxLen) {
+                // FIXME incompatible with 0's in stream
                 char * stx_found = strnstr(buffer+parse_pos, stx, (write_pos-parse_pos));
                 if (!stx_found || (stx_found != buffer+parse_pos)) {
-                    error("tcpclient: stx missing, skipping\n");
                     if (!stx_found) {
+                        // wtf?
+#define DEBUG_STR_LEN 100
+#define MIN(a,b) ( ((a)<(b)) ? (a) : (b) )
+                        char dbg_str[DEBUG_STR_LEN];
+                        strncpy(dbg_str,buffer+parse_pos,MIN(DEBUG_STR_LEN,(write_pos-parse_pos)));
+                        {
+                            int i;
+                            for(i=0;i<DEBUG_STR_LEN;i++) {
+                                if (dbg_str[i]==0) break;
+                                if (dbg_str[i]<32) dbg_str[i] = '.';
+                            }
+                        }
+#undef MIN
+
                         // discard buffer
+                        error("tcpclient: stx missing, discarding received data\n");
+                        error("  buffer start: [%s]\n",dbg_str);
                         write_pos = 0;
                         break;
                     }
+                    error("tcpclient: unbound data, skipping untill stx\n");
                 }
-                parse_pos = (stx_found-buffer)+self->stxLen;
+                parse_pos = (stx_found-buffer);
             }
 
             // find etx
             if (self->etxLen) {
-                char * etx_found = strnstr(buffer+parse_pos, etx, write_pos-parse_pos);
+                char * etx_found = strnstr(buffer+parse_pos+self->stxLen, etx,
+                        write_pos-parse_pos-self->stxLen);
                 if (!etx_found) {
+#if 0
+                    post("tcpclient: no etx, moving buffer remainder upfront\n");
+#endif
                     // move remainder upfront
                     memmove(buffer,buffer+parse_pos,write_pos-parse_pos);
                     break;
                 }
-                msg_len = etx_found - buffer - parse_pos;
+                msg_len = etx_found - buffer - parse_pos - self->stxLen;
             } else
-                msg_len = write_pos - parse_pos;
+                msg_len = write_pos - parse_pos - self->stxLen;
 
             // copy and send
-            memcpy(cp_buffer,buffer+parse_pos,msg_len);
-            cp_buffer[msg_len] = 0;
+            memcpy(cp_buffer,buffer+parse_pos+self->stxLen,msg_len);
+            cp_buffer[msg_len] = 0; // FIXME incompatible with 0's in stream
 
             atom_setsym(&reply, gensym(cp_buffer));
             outlet_anything(self->out, gensym("reply"), 1, &reply);
+            stats_messages++;
 
             // advance parse_pos
-            parse_pos += msg_len + self->etxLen;
+            parse_pos += self->stxLen + msg_len + self->etxLen;
+            stats_parsed += self->stxLen + msg_len + self->etxLen;
         }
 
         // set write_pos to the end of remainder if any
-        write_pos = write_pos - parse_pos;
+        write_pos -= parse_pos;
     } while(recvd>0);
+
+#if 0
+    if (stats_recvd)
+        post("Received %d bytes, parsed %d full messages in %d bytes\n",
+                stats_recvd, stats_messages, stats_parsed);
+#endif
 
     // continue polling
     qelem_set(self->recvQueue);
