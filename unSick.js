@@ -226,16 +226,15 @@ function typeError(head,types,vals) {
 
 /********** PARSER LOGIC *********/
 DictParse.local = 1;
-function DictParse(msg,fields)
+function DictParse(msg,offs,fields,dict)
 {
-  var dict = {};
-  for(var i in fields) {
-    var desc = fields[i];
-    var val = msg.shift();
+  for(var f in fields) {
+    var desc = fields[f];
+    var val = msg[offs++];
     if (desc != ignore)
       dict[desc[0]] = convert(val,desc[1]);
   }
-  return dict;
+  return offs;
 }
 
 PrettyPost.local = 1;
@@ -264,29 +263,32 @@ function PrettyPost(dict,ident) {
 ScanDataParser.local = 1;
 function ScanDataParser(msg)
 {
-  var scan_dict = DictParse(msg, [
-      ignore, ignore, // SN/RA LMDscandata
-      ["scandata-version", u16],
-      ["device-id", u16],
-      ["device-serial-number", u32],
-      ["device-status",
-        {0:"OK",1:"device error",2:"contamination warning",4:"contamination error"}],
-      ignore, // reserved and missing from documentation
-      ["message-count", u16],
-      ["scan-count", u16],
-      ["uptime", u32],
-      ["tx-time", u32],
-      ["input-status", u16],
-      ["output-status", u16],
-      ignore,ignore,ignore, // reserved, only one is documented as such
-      ["scanning-frequency", u32],
-      ["measurement-frequency", u32],
-      ["encoders-count",u8]]);
+  var scan_dict = {};
+  var offs = 2; // skip SN/RA LMDscandata
+
+  offs = DictParse(msg, offs,
+      [["scandata-version", u16],
+       ["device-id", u16],
+       ["device-serial-number", u32],
+       ["device-status",
+         {0:"OK",1:"device error",2:"contamination warning",4:"contamination error"}],
+       ignore, // reserved and missing from documentation
+       ["message-count", u16],
+       ["scan-count", u16],
+       ["uptime", u32],
+       ["tx-time", u32],
+       ["input-status", u16],
+       ["output-status", u16],
+       ignore,ignore,ignore, // reserved, only one is documented as such
+       ["scanning-frequency", u32],
+       ["measurement-frequency", u32],
+       ["encoders-count",u8]],
+       scan_dict);
 
   if (scan_dict["encoders-count"] > 0) {
     scan_dict['encoders'] = [];
     for(var i = 0; i < scan_dict['encoders-count']; i++) {
-      scan_dict['encoders'] += [ convert(msg.shift(),u32), convert(msg.shift(), u16) ];
+      scan_dict['encoders'] += [ convert(msg[offs++],u32), convert(msg[offs++], u16) ];
     }
   }
 
@@ -296,20 +298,20 @@ function ScanDataParser(msg)
   var data_type = [u16, u8];
   var channels = {};
   for(var i = 0; i<2; i++) {
-    var nch = convert(msg.shift(), u8);
+    var nch = convert(msg[offs++], u8);
     for(var j = 0; j<nch; j++) {
-      var chname = msg.shift();
-      channels[chname] = DictParse(msg, [
-          ["scaling-factor", real],
-          ["scaling-offset", real],
-          ["starting-angle", i32],
-          ["anglular-step", u16],
-          ["data-size", u16]
-        ]);
+      var chname = msg[offs++];
+      channels[chname] = {};
+      offs = DictParse(msg, offs,
+          [["scaling-factor", real],
+           ["scaling-offset", real],
+           ["starting-angle", i32],
+           ["anglular-step", u16],
+           ["data-size", u16]],channels[chname]);
       channels[chname]["data"] = [];
       // channel data as list
       for(var k=0;k<channels[chname]["data-size"];k++) {
-        var v = convert(msg.shift(), data_type[i]);
+        var v = convert(msg[offs++], data_type[i]);
         if ((v==0) && chname.match(/^DIST/))
           v = 0xFFFF; // laser never returned, set to max u16 (DIST is always 16-bit)
         channels[chname]["data"].push(v);
