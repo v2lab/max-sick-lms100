@@ -29,7 +29,7 @@ var LMS1xx = {
         3  : 'Unknown Request',
         4  : 'Invalid Parameter Value',
         8  : 'Missing Parameter(s)',
-        10 : 'Permission Denied'
+        10 : 'Permission Denied',
     },
     'RA' : {
       '8': ["device-state", {"default":"not-ready",1:"ready"}],
@@ -51,6 +51,7 @@ var LMS1xx = {
                 nbool,ignore,str,ignore,str,u32,u32,u32],
       'LMPscancfg': ["scan-config",u32,u8,u32,i32,i32],
       'LMDscandata': ScanDataParser,
+      'F1' : ["mean-filter", bool, u8, u8],
     },
     'AN' : {
       'GetAccessMode' :
