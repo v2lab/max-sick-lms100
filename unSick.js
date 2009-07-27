@@ -173,32 +173,24 @@ function u2f32(n) {
 /********** TYPED CONVERSION *********/
 convert.local = 1
 function convert(val,type) {
-  // This could be a hex treated as decimal by Max's (fromSymbol)
-  if (typeof(val) == "number")
-    val = val.toString();
-
   // decode integers
   if (typeof(val) == "string") {
-    if (val.match(/^[0-9A-F]+$/)) {
-      val = parseInt(val,16);
-      // convert to signed
-      switch(type) {
-        case "i16":
-          val = u2i16(val);
-        break;
-        case "i32":
-          val = u2i32(val);
-        break;
-        case "i64":
-          val = u2i64(val);
-        break;
-        // or to real
-        case "real":
-          val = u2f32(val);
-        break;
-      }
-    } else if (val.match(/^[-+][0-9]+$/)) {
-      val = parseInt(val,10);
+    val = parseInt(val,16);
+    // convert to signed
+    switch(type) {
+      case "i16":
+        val = u2i16(val);
+      break;
+      case "i32":
+        val = u2i32(val);
+      break;
+      case "i64":
+        val = u2i64(val);
+      break;
+      // or to real
+      case "real":
+        val = u2f32(val);
+      break;
     }
   }
 
@@ -313,8 +305,10 @@ function ScanDataParser(msg)
       // channel data as list
       for(var k=0;k<channels[chname]["data-size"];k++) {
         var v = convert(msg[offs++], data_type[i]);
+        /* Stock does this, but I won't
         if ((v==0) && chname.match(/^DIST/))
           v = 0xFFFF; // laser never returned, set to max u16 (DIST is always 16-bit)
+          */
         channels[chname]["data"].push(v);
       }
     }

@@ -229,6 +229,8 @@ void tcpclient_recv(t_tcpclient * self)
     int stats_messages = 0;
     int stats_parsed = 0;
 
+    if (!self) return;
+
     if (self->sock < 0) {
         error("tcpclient: attempt to receive while not connected\n");
         return;
