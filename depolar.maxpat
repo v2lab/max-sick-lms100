@@ -17,6 +17,47 @@
 		"imprint" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"maxclass" : "newobj",
+					"text" : "s sick.dist.scaled",
+					"patching_rect" : [ 184.0, 520.0, 119.0, 20.0 ],
+					"id" : "obj-40",
+					"fontname" : "Monaco",
+					"fontsize" : 10.0,
+					"numinlets" : 1,
+					"numoutlets" : 0
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"maxclass" : "newobj",
+					"text" : "t b",
+					"patching_rect" : [ 184.0, 496.0, 29.0, 20.0 ],
+					"outlettype" : [ "bang" ],
+					"id" : "obj-39",
+					"fontname" : "Monaco",
+					"fontsize" : 10.0,
+					"numinlets" : 1,
+					"numoutlets" : 1
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"maxclass" : "newobj",
+					"text" : "jit.matrix dist.scaled",
+					"patching_rect" : [ 184.0, 472.0, 143.0, 20.0 ],
+					"outlettype" : [ "jit_matrix", "" ],
+					"id" : "obj-30",
+					"fontname" : "Monaco",
+					"fontsize" : 10.0,
+					"numinlets" : 1,
+					"numoutlets" : 2
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"maxclass" : "comment",
 					"text" : "switch off blur while navigating",
 					"linecount" : 2,
@@ -457,7 +498,7 @@
 , 			{
 				"box" : 				{
 					"maxclass" : "jit.fpsgui",
-					"patching_rect" : [ 32.0, 504.0, 80.0, 37.0 ],
+					"patching_rect" : [ 32.0, 528.0, 80.0, 37.0 ],
 					"outlettype" : [ "", "" ],
 					"id" : "obj-7",
 					"fontname" : "Monaco",
@@ -471,7 +512,7 @@
 				"box" : 				{
 					"maxclass" : "newobj",
 					"text" : "p polar2carthesian",
-					"patching_rect" : [ 8.0, 480.0, 119.0, 20.0 ],
+					"patching_rect" : [ 8.0, 504.0, 119.0, 20.0 ],
 					"outlettype" : [ "jit_matrix", "" ],
 					"id" : "obj-6",
 					"fontname" : "Monaco",
@@ -1288,8 +1329,8 @@
 , 			{
 				"box" : 				{
 					"maxclass" : "newobj",
-					"text" : "jit.op @op / @val 65535",
-					"patching_rect" : [ 8.0, 448.0, 149.0, 20.0 ],
+					"text" : "jit.op @op / @val 65535.",
+					"patching_rect" : [ 8.0, 448.0, 155.0, 20.0 ],
 					"outlettype" : [ "jit_matrix", "" ],
 					"id" : "obj-54",
 					"fontname" : "Monaco",
@@ -1317,7 +1358,7 @@
 				"box" : 				{
 					"maxclass" : "newobj",
 					"text" : "jit.gl.mesh radar @color 0.4 1. 0.4 1. @blend_enable 1 @draw_mode points",
-					"patching_rect" : [ 8.0, 544.0, 443.0, 20.0 ],
+					"patching_rect" : [ 8.0, 568.0, 443.0, 20.0 ],
 					"outlettype" : [ "jit_matrix", "" ],
 					"id" : "obj-37",
 					"fontname" : "Monaco",
@@ -1413,6 +1454,51 @@
 			}
  ],
 		"lines" : [ 			{
+				"patchline" : 				{
+					"source" : [ "obj-39", 0 ],
+					"destination" : [ "obj-40", 0 ],
+					"hidden" : 0,
+					"midpoints" : [  ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"source" : [ "obj-30", 0 ],
+					"destination" : [ "obj-39", 0 ],
+					"hidden" : 0,
+					"midpoints" : [  ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"source" : [ "obj-54", 0 ],
+					"destination" : [ "obj-30", 0 ],
+					"hidden" : 0,
+					"midpoints" : [  ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"source" : [ "obj-54", 0 ],
+					"destination" : [ "obj-6", 0 ],
+					"hidden" : 0,
+					"midpoints" : [  ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"source" : [ "obj-34", 0 ],
+					"destination" : [ "obj-54", 0 ],
+					"hidden" : 0,
+					"midpoints" : [  ]
+				}
+
+			}
+, 			{
 				"patchline" : 				{
 					"source" : [ "obj-27", 0 ],
 					"destination" : [ "obj-6", 1 ],
@@ -1603,15 +1689,6 @@
 			}
 , 			{
 				"patchline" : 				{
-					"source" : [ "obj-34", 0 ],
-					"destination" : [ "obj-54", 0 ],
-					"hidden" : 0,
-					"midpoints" : [  ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
 					"source" : [ "obj-32", 0 ],
 					"destination" : [ "obj-12", 0 ],
 					"hidden" : 0,
@@ -1695,15 +1772,6 @@
 				"patchline" : 				{
 					"source" : [ "obj-6", 0 ],
 					"destination" : [ "obj-7", 0 ],
-					"hidden" : 0,
-					"midpoints" : [  ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"source" : [ "obj-54", 0 ],
-					"destination" : [ "obj-6", 0 ],
 					"hidden" : 0,
 					"midpoints" : [  ]
 				}
