@@ -22,6 +22,7 @@ typedef struct t_tcpclient
 
     void * out;
     void * recvQueue;
+    t_symbol * sym_buffer;
 } t_tcpclient;
 
 static t_class * s_tcpclient_class = 0;
@@ -68,6 +69,7 @@ void * tcpclient_new()
 
     self->out = outlet_new(self,NULL);
     self->recvQueue = qelem_new((t_object *)self, (method)tcpclient_recv);
+    self->sym_buffer = NULL;
     return self;
 }
 
@@ -275,7 +277,7 @@ void tcpclient_recv(t_tcpclient * self)
         while(parse_pos < write_pos) {
             t_atom reply;
             int stx_pos, etx_pos;
-            char cp_buffer[RCV_BUFFER_SIZE];
+            static char cp_buffer[RCV_BUFFER_SIZE];
             int msg_len;
 
             // confirm stx
@@ -329,7 +331,11 @@ void tcpclient_recv(t_tcpclient * self)
             memcpy(cp_buffer,buffer+parse_pos+self->stxLen,msg_len);
             cp_buffer[msg_len] = 0; // FIXME incompatible with 0's in stream
 
-            atom_setsym(&reply, gensym(cp_buffer));
+            if (!self->sym_buffer)
+                self->sym_buffer = gensym(cp_buffer);
+            else
+                self->sym_buffer->s_name = cp_buffer;
+            atom_setsym(&reply, self->sym_buffer);
             outlet_anything(self->out, gensym("reply"), 1, &reply);
             stats_messages++;
 
