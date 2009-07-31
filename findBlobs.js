@@ -2,7 +2,7 @@
 
 /********** parameters *********/
 var epsilon = 1.0/65535;
-var max_step_delta = 0.01;
+var max_step_delta = 0.001;
 var min_steps = 3;
 
 /********** scan *********/
@@ -17,6 +17,7 @@ function scan() {
   var blob_end = function() {
     if (blob_steps >= min_steps) {
       // actually send
+      // I have to -0 to prevent it from being a string, which is weird
       outlet(0, ["blob",blob_min,blob_max,i-blob_steps,i-0]);
     }
     // reset current
@@ -44,6 +45,7 @@ function scan() {
   }
   if (blob_steps)
     blob_end();
+  outlet(0,["detected",i]);
   outlet(1,["bang"]); // done
 }
 
