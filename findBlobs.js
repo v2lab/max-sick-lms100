@@ -17,7 +17,7 @@ function scan() {
   var blob_end = function() {
     if (blob_steps >= min_steps) {
       // actually send
-      outlet(0, ["blob", i-blob_steps,i,blob_min,blob_max]);
+      outlet(0, ["blob",blob_min,blob_max,i-blob_steps,i-0]);
     }
     // reset current
     blob_steps = 0;
