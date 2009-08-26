@@ -2,7 +2,7 @@
 
 /********** parameters *********/
 var epsilon = 1.0/65535;
-var max_step_delta = 0.001;
+var max_step_delta = 0.003;
 var min_steps = 3;
 
 /********** scan *********/
