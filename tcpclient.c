@@ -6,8 +6,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include <ext.h>
-#include <ext_obex.h>
+#include <MaxAPI/ext.h>
+#include <MaxAPI/ext_obex.h>
 
 #define MAX_APPENDIX_LEN 2
 
