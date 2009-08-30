@@ -1,20 +1,28 @@
 PROJECT(LMS1xx-external)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-FIND_LIBRARY(MAX_API MaxAPI)
-
 FUNCTION(ADD_MAX_EXTERNAL external)
+  # will always have to link with it
+  FIND_LIBRARY(LIB_MAX MaxAPI)
+
   # optional arguments will contain magic words (MSP, JITTER) and/or the list of
   # sources. if no sources are given, ${external}.c is the only one
-  SET(sources ${ARGN})
-  IF(sources)
-    LIST(REMOVE_ITEM sources MSP JITTER)
-  ENDIF(sources)
+  SET(sources) # empty local
+  FOREACH(ARG ${ARGN})
+    IF(ARG STREQUAL MSP)
+      FIND_LIBRARY(LIB_MSP MaxAudioAPI)
+    ELSEIF(ARG STREQUAL JITTER)
+      FIND_LIBRARY(LIB_JITTER JitterAPI)
+    ELSE(ARG STREQUAL MSP)
+      LIST(APPEND sources ${ARG})
+    ENDIF(ARG STREQUAL MSP)
+  ENDFOREACH(ARG)
   IF(NOT sources)
     SET(sources ${external}.c)
   ENDIF(NOT sources)
+
   ADD_LIBRARY(${external} MODULE ${sources})
-  TARGET_LINK_LIBRARIES(${external} ${MAX_API})
+  TARGET_LINK_LIBRARIES(${external} ${LIB_MAX} ${LIB_MSP} ${LIB_JITTER})
 
   IF(APPLE)
     # osx bundle structure
@@ -38,4 +46,4 @@ FUNCTION(ADD_MAX_EXTERNAL external)
 ENDFUNCTION(ADD_MAX_EXTERNAL)
 
 ADD_MAX_EXTERNAL(tcpclient)
-
+ADD_MAX_EXTERNAL(messlog)
