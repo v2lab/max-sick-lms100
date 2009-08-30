@@ -18,7 +18,11 @@ FUNCTION(ADD_MAX_EXTERNAL external)
     ENDIF(ARG STREQUAL MSP)
   ENDFOREACH(ARG)
   IF(NOT sources)
-    SET(sources ${external}.c)
+    FILE(GLOB sources RELATIVE ${CMAKE_SOURCE_DIR}
+      ${external}.c ${external}.cpp ${external}.cxx ${external}.cpp)
+  ENDIF(NOT sources)
+  IF(NOT sources)
+    MESSAGE(SEND_ERROR "Didn't find sources for ${external}")
   ENDIF(NOT sources)
 
   ADD_LIBRARY(${external} MODULE ${sources})
