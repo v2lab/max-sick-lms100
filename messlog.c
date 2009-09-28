@@ -1,8 +1,8 @@
 // FIXME osx specific
 #include <Carbon/Carbon.h>
 
-#include <MaxAPI/ext.h>
-#include <MaxAPI/ext_obex.h>
+#include <ext.h>
+#include <ext_obex.h>
 
 typedef struct t_messlog
 {
