@@ -1,24 +1,4 @@
-// FIXME osx specific
-#include <Carbon/Carbon.h>
-
-#include <ext.h>
-#include <ext_obex.h>
-
-// nil conflicts with boost
-#undef nil
-
-#include "pfun/mem_fn_wrap.hpp"
-
-// setup automatic registration stuff
-#include <boost/preprocessor/repetition/enum_trailing.hpp>
-#define DECORATE_TYPE(z,i,data) mxx::type_tag< PARAM_TYPE(i) >::value
-#define REGISTER_CALLBACK(CB,ARITY,CLASS,NAME) \
-    class_addmethod(CLASS,(method)CB,NAME \
-    BOOST_PP_ENUM_TRAILING(ARITY,DECORATE_TYPE,~) \
-    , 0);
-#define REGISTER_CALLBACK_EXTRA_ARG_TYPES (t_class*)(char*)
-
-#include "pfun/auto_reg_cb.hpp"
+#include "maxxx.h"
 
 struct Hello {
     t_object ob;
@@ -60,8 +40,7 @@ int main()
             sizeof(Hello),
             0, 0);
 
-
-    class_addmethod(Hello::_class, (method)MEM_FUN_WRAP(&Hello::i_am), "i_am", A_SYM, 0);
+    auto_reg(MEM_FUN_WRAP(&Hello::i_am), Hello::_class, "i_am");
 
     class_register(CLASS_BOX, Hello::_class);
 

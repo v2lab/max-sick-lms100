@@ -6,9 +6,11 @@
 /SICK*.log
 /BlobServer
 /LMS*.pdf
-/.vim
+/.vimrc
 /*.mxo
 *.pcap
-messlog
-messlog.log
+/messlog
+/messlog.log
 /build
+/pfun
+/v2_cmake
