@@ -31,6 +31,45 @@ namespace mxx {
 
 #include "pfun/auto_reg_cb.hpp"
 
+template <class T> struct allocator { static T* allocate(){ return new T; }};
+
+template<class T> struct MaxxxBase {
+    t_object ob;
+    static t_class * _class;
+
+    void* operator new(size_t) throw()
+    {
+        if (!_class) {
+            error("Internal error: T_maxxx class not registered when constructor was called\n");
+            return 0;
+        }
+        void * chunk = object_alloc(_class);
+        if (!chunk)
+            error("Allocation of object memory failed\n");
+        else
+            post("Allocated memory for MaxxxBase<T> using custom operator new()\n");
+        return chunk;
+    }
+
+    static void class_reg(char * name)
+    {
+        _class = class_new(name,
+                (method)allocator<T>::allocate,
+                (method)NULL, // FIXME
+                sizeof(T),
+                0, // FIXME
+                0); // FIXME
+    }
+
+    template < typename F >
+    static void method_reg0(char * name, F fun)
+    {
+        auto_reg(fun, _class, name);
+    }
+#define method_reg(name, fun) method_reg0(name, MEM_FUN_WRAP(fun))
+};
+template<class T> t_class * MaxxxBase<T>::_class = 0;
+
 
 
 #endif
