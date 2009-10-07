@@ -1,7 +1,10 @@
 #include "maxxx.h"
 
 struct Hello : MaxxxBase<Hello> {
-    Hello() { post("Default hello_maxxx constructor called\n"); }
+    Hello() {
+        post("Default hello_maxxx constructor called\n");
+        intin(this, 1);
+    }
 
     void i_am(const char * name) {
         post("hi there, %s\n", name);
@@ -23,6 +26,10 @@ struct Hello : MaxxxBase<Hello> {
     void test(long i, double f, const char * s) {
         post("tested %d, %f, %s\n", i, f, s);
     }
+
+    void int_inlet1(long i) {
+        post("received %d in a second inlet\n", i);
+    }
 };
 
 int main()
@@ -35,6 +42,8 @@ int main()
     Hello::method_reg("float", &Hello::_float);
     Hello::method_reg("test2", &Hello::test2);
     Hello::method_reg("test", &Hello::test);
+
+    Hello::method_reg("in1", &Hello::int_inlet1);
 
     class_register(CLASS_BOX, Hello::_class);
 
