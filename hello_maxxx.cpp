@@ -3,8 +3,8 @@
 struct Hello : MaxxxBase<Hello> {
     Hello() { post("Default hello_maxxx constructor called\n"); }
 
-    void i_am(t_symbol * name) {
-        post("hi there, %s\n", name->s_name);
+    void i_am(const char * name) {
+        post("hi there, %s\n", name);
     }
 
     void bang() {
@@ -20,8 +20,8 @@ struct Hello : MaxxxBase<Hello> {
     void test2(long i, double f) {
         post("tested %d, %f\n", i, f);
     }
-    void test(long i, double f, t_symbol * s) {
-        post("tested %d, %f, %s\n", i, f, s->s_name);
+    void test(long i, double f, const char * s) {
+        post("tested %d, %f, %s\n", i, f, s);
     }
 };
 

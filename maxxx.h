@@ -24,6 +24,9 @@ namespace mxx {
 PARAM_CONVERSION(float, double, d)
 { return (float)d; }
 
+PARAM_CONVERSION(const char *, t_symbol *, sym)
+{ return sym->s_name; }
+
 // setup automatic registration stuff
 #include <boost/preprocessor.hpp>
 #define DECORATE_TYPE(z,i,data) mxx::type_tag< PARAM_TYPE(i) >::value
