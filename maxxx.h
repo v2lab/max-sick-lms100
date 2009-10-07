@@ -10,6 +10,14 @@
 // nil conflicts with boost
 #undef nil
 
+#include <string>
+#include <map>
+
+#include <boost/regex.hpp>
+#include <boost/lexical_cast.hpp>
+using boost::lexical_cast;
+using boost::bad_lexical_cast;
+
 #include "pfun/mem_fn_wrap.hpp"
 
 namespace mxx {
@@ -69,14 +77,42 @@ template<class T> struct MaxxxBase {
                 0); // FIXME
     }
 
+    typedef void * (*inlet_reg)(void *, short);
+    typedef std::map<int,inlet_reg> inlet_map_t;
+    static inlet_map_t inlet_map;
+
     template < typename F >
     static void method_reg0(char * name, F fun)
     {
         auto_reg(fun, _class, name);
+
+        /* if this is a special inletly name - remember the inlet */
+        const boost::regex inlet_re("(in|ft)(\\d+)");
+        boost::cmatch m;
+        if (boost::regex_match(name, m, inlet_re)) {
+            int n;
+            try {
+                n = lexical_cast<int>(m[2].first);
+            } catch (bad_lexical_cast&) {
+                error("internal error remembering inlet for '%s'\n",name);
+                return;
+            }
+            std::string s(m[1].first, m[1].second);
+            inlet_map[n] = s=="in" ? &intin : &floatin;
+            // FIXME complain if have such inlet already
+        }
     }
 #define method_reg(name, fun) method_reg0(name, MEM_FUN_WRAP(fun))
+
+    MaxxxBase() {
+        inlet_map_t::iterator it;
+        for(it = inlet_map.begin(); it != inlet_map.end(); ++it) {
+            (*it).second(&ob, (*it).first);
+        }
+    }
 };
 template<class T> t_class * MaxxxBase<T>::_class = 0;
+template<class T> typename MaxxxBase<T>::inlet_map_t MaxxxBase<T>::inlet_map;
 
 
 

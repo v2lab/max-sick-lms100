@@ -3,7 +3,6 @@
 struct Hello : MaxxxBase<Hello> {
     Hello() {
         post("Default hello_maxxx constructor called\n");
-        intin(this, 1);
     }
 
     void i_am(const char * name) {
