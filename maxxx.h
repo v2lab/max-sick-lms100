@@ -17,6 +17,8 @@ namespace mxx {
     struct type_tag;
 
     template<> struct type_tag< t_symbol* > { static const long value = A_SYM; };
+    template<> struct type_tag< long > { static const long value = A_LONG; };
+    template<> struct type_tag< double > { static const long value = A_FLOAT; };
 }
 
 // setup automatic registration stuff
