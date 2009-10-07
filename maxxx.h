@@ -21,6 +21,9 @@ namespace mxx {
     template<> struct type_tag< double > { static const long value = A_FLOAT; };
 }
 
+PARAM_CONVERSION(float, double, d)
+{ return (float)d; }
+
 // setup automatic registration stuff
 #include <boost/preprocessor.hpp>
 #define DECORATE_TYPE(z,i,data) mxx::type_tag< PARAM_TYPE(i) >::value

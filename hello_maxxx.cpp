@@ -14,7 +14,7 @@ struct Hello : MaxxxBase<Hello> {
     void _int(long i) {
         post("int %d\n", i);
     }
-    void _float(double f) {
+    void _float(float f) {
         post("float %f\n", f);
     }
     void test2(long i, double f) {

@@ -20,11 +20,11 @@
 		"boxes" : [ 			{
 				"box" : 				{
 					"maxclass" : "message",
-					"text" : "test 1 2.3 foo",
+					"text" : "test2 4 5.6",
 					"outlettype" : [ "" ],
 					"id" : "obj-8",
 					"fontname" : "Monaco",
-					"patching_rect" : [ 104.0, 160.0, 95.0, 18.0 ],
+					"patching_rect" : [ 104.0, 160.0, 77.0, 18.0 ],
 					"numinlets" : 2,
 					"fontsize" : 10.0,
 					"numoutlets" : 1
