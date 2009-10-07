@@ -47,9 +47,19 @@ PARAM_CONVERSION(const char *, t_symbol *, sym)
 
 #include "pfun/auto_reg_cb.hpp"
 
-template <class T> struct allocator { static T* allocate(){ return new T; }};
+template <class T> struct allocator {
+    static T* allocate(){ return new T; }
+    static void free(T* x){ delete x; }
+};
 
-template<class T> struct MaxxxBase {
+namespace mxx {
+    enum namespace_t {
+        BOX,
+        NOBOX,
+    };
+}
+
+template<class T, mxx::namespace_t NS = mxx::BOX> struct MaxxxBase {
     t_object ob;
     static t_class * _class;
 
@@ -66,15 +76,23 @@ template<class T> struct MaxxxBase {
             post("Allocated memory for MaxxxBase<T> using custom operator new()\n");
         return chunk;
     }
+    void operator delete(void * x) {
+        post("Deallocating memory for MaxxxBase<T> using custom operator delete()\n");
+        // don't really deallocate, max will do for us
+    }
 
     static void class_reg(char * name)
     {
         _class = class_new(name,
                 (method)allocator<T>::allocate,
-                (method)NULL, // FIXME
+                (method)allocator<T>::free,
                 sizeof(T),
-                0, // FIXME
-                0); // FIXME
+                (method)NULL, // ??? something for UI objects
+                0); // FIXME types of constructor parameters
+    }
+    static int class_reg_finally()
+    {
+        return class_register( NS==mxx::BOX ? CLASS_BOX : CLASS_NOBOX, _class );
     }
 
     typedef void * (*inlet_reg)(void *, short);
@@ -114,9 +132,18 @@ template<class T> struct MaxxxBase {
         }
     }
 };
-template<class T> t_class * MaxxxBase<T>::_class = 0;
-template<class T> typename MaxxxBase<T>::inlet_map_t MaxxxBase<T>::inlet_map;
+template<class T, mxx::namespace_t NS> t_class * MaxxxBase<T,NS>::_class = 0;
+template<class T, mxx::namespace_t NS> typename MaxxxBase<T,NS>::inlet_map_t MaxxxBase<T,NS>::inlet_map;
 
+#define MXX_METH_MACRO(r, c, name_meth) c ::method_reg( \
+        BOOST_PP_TUPLE_ELEM(2,0, name_meth) \
+        , & c :: BOOST_PP_TUPLE_ELEM(2,1, name_meth));
 
+#define MXX_REGISTER_CLASS( C, C_NAME, MS) \
+    C ::class_reg(C_NAME); \
+    BOOST_PP_SEQ_FOR_EACH(MXX_METH_MACRO, C, MS) \
+    C ::class_reg_finally();
 
+#define MXX_CLASS(name) struct name : MaxxxBase<name>
+#define MXX_NOBOX_CLASS(name) struct name : MaxxxBase<name,mxx::NOBOX>
 #endif
