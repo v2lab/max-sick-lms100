@@ -98,8 +98,11 @@ template<class T> struct MaxxxBase {
                 return;
             }
             std::string s(m[1].first, m[1].second);
-            inlet_map[n] = s=="in" ? &intin : &floatin;
-            // FIXME complain if have such inlet already
+            if (inlet_map.count(n) > 0) {
+                error("Attempt to register duplicate special inlet method for inlet #%d\n",n);
+            } else {
+                inlet_map[n] = s=="in" ? &intin : &floatin;
+            }
         }
     }
 #define method_reg(name, fun) method_reg0(name, MEM_FUN_WRAP(fun))

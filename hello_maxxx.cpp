@@ -29,6 +29,10 @@ struct Hello : MaxxxBase<Hello> {
     void int_inlet1(long i) {
         post("received %d in a second inlet\n", i);
     }
+
+    void float_inlet2(float f) {
+        post("received %f in a third inlet\n", f);
+    }
 };
 
 int main()
@@ -43,6 +47,10 @@ int main()
     Hello::method_reg("test", &Hello::test);
 
     Hello::method_reg("in1", &Hello::int_inlet1);
+    Hello::method_reg("ft1", &Hello::float_inlet2);
+
+    Hello::method_reg("ft2", &Hello::float_inlet2);
+    Hello::method_reg("in2", &Hello::int_inlet1);
 
     class_register(CLASS_BOX, Hello::_class);
 
