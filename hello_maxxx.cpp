@@ -2,7 +2,7 @@
 
 MXX_CLASS(Hello) {
     Hello() { post("Default hello_maxxx constructor called\n"); }
-    ~Hello() { post("hello_maxxx destructor called\n"); }
+    virtual ~Hello() { post("hello_maxxx destructor called\n"); }
     void i_am(const char * name) { post("hi there, %s\n", name); }
     void bang() { post("I've got bang!\n"); }
     void _int(long i) { post("int %d\n", i); }

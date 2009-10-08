@@ -57,45 +57,28 @@ PARAM_CONVERSION(const char *, t_symbol *, sym) { return sym->s_name; }
 
 namespace mxx {
 
-    template <class T> struct allocator {
-        static T* allocate(){ return new T; }
-        static void free(T* x){ delete x; }
-    };
+    template<class T, mxx::namespace_t NS = mxx::BOX> struct wrapper;
 
     template<class T, mxx::namespace_t NS = mxx::BOX> struct base {
-        t_object ob;
+        typedef T type;
+        typedef base<T,NS> base_type;
+        typedef wrapper<T,NS> wrapper_type;
         static t_class * _class;
 
-        void* operator new(size_t) throw()
-        {
-            if (!_class) {
-                error("Internal error: T_maxxx class not registered when constructor was called\n");
-                return 0;
-            }
-            void * chunk = object_alloc(_class);
-            if (!chunk)
-                error("Allocation of object memory failed\n");
-            else
-                post("Allocated memory for base<T> using custom operator new()\n");
-            return chunk;
-        }
-        void operator delete(void * x) {
-            post("Deallocating memory for base<T> using custom operator delete()\n");
-            // don't really deallocate, max will do for us
-        }
+        wrapper_type * wrapper;
 
         static void class_reg(char * name)
         {
             _class = class_new(name,
-                    (method)allocator<T>::allocate,
-                    (method)allocator<T>::free,
-                    sizeof(T),
+                    (method)wrapper_type::allocate,
+                    (method)wrapper_type::free,
+                    sizeof(wrapper_type),
                     (method)NULL, // ??? something for UI objects
                     0); // FIXME types of constructor parameters
         }
         static int class_reg_finally()
         {
-            return class_register( NS==mxx::BOX ? CLASS_BOX : CLASS_NOBOX, _class );
+            return class_register( NS==BOX ? CLASS_BOX : CLASS_NOBOX, _class );
         }
 
         typedef void * (*inlet_reg)(void *, short);
@@ -128,16 +111,58 @@ namespace mxx {
             }
 #define method_reg(name, fun) method_reg0(name, MEM_FUN_WRAP(fun))
 
-        base() {
+        void setup( wrapper_type * _w ) {
+            wrapper = _w;
+
             inlet_map_t::iterator it;
             for(it = inlet_map.begin(); it != inlet_map.end(); ++it) {
-                (*it).second(&ob, (*it).first);
+                (*it).second(&wrapper->ob, (*it).first);
             }
         }
     };
     template<class T, mxx::namespace_t NS> t_class * base<T,NS>::_class = 0;
     template<class T, mxx::namespace_t NS> typename base<T,NS>::inlet_map_t base<T,NS>::inlet_map;
+
+    /*
+     * IMPORTANT: this one should remain C-struct compatible: can't have virtuals...
+     */
+    template<class T, mxx::namespace_t NS> struct wrapper {
+        typedef T type;
+        typedef wrapper<T,NS> wrapper_type;
+        typedef base<T,NS> base_type;
+        t_object ob;
+        T * wrappee;
+
+        static wrapper_type * allocate() {
+            if (! T::_class ) {
+                error("Internal error: class not registered when constructor was called\n");
+                return 0;
+            }
+            wrapper_type * wrapper = (wrapper_type *)object_alloc(T::_class);
+            if (!wrapper)
+                error("Allocation of object memory failed\n");
+            else
+                post("Allocated memory for base<T> using custom operator new()\n");
+
+            wrapper -> wrappee = new T;
+            wrapper -> wrappee -> setup( wrapper ); // circular references are fun
+            return wrapper;
+        }
+
+        static void free(wrapper_type * wrapper) {
+            post("Deallocating wrapped object using custom operator delete()\n");
+            delete wrapper -> wrappee;
+        }
+    };
+
 }
+
+/* make sure wrapper passes the right 'this' to member functions */
+template< class T > struct param_type< T& > {
+    typedef mxx::wrapper<T> * type;
+    static T& convert_param(type w) { return *(w->wrappee); }
+};
+
 
 #define MXX_METH_MACRO(r, c, name_meth) c ::method_reg( \
         BOOST_PP_TUPLE_ELEM(2,0, name_meth) \
