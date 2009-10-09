@@ -1,9 +1,19 @@
 #include "maxxx.h"
 
 MXX_CLASS(Hello) {
-    Hello() { post("Default hello_maxxx constructor called\n"); }
+    char * name;
+
+    Hello() : name("Moshe") { post("Default hello_maxxx constructor called\n"); }
+
+    virtual void setup(long argc, t_atom * argv)
+    {
+        if ((argc>0) && (atom_gettype(&argv[0])==A_SYM)) {
+            name = atom_getsym(&argv[0])->s_name;
+        }
+    }
+
     virtual ~Hello() { post("hello_maxxx destructor called\n"); }
-    void i_am(const char * name) { post("hi there, %s\n", name); }
+    void i_am(const char * name) { post("hi there, %s. I am %s\n", name, this->name); }
     void bang() { post("I've got bang!\n"); }
     void _int(long i) { post("int %d\n", i); }
     void _float(float f) { post("float %f\n", f); }

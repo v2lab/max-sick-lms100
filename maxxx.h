@@ -60,12 +60,27 @@ namespace mxx {
     template<class T, mxx::namespace_t NS = mxx::BOX> struct wrapper;
 
     template<class T, mxx::namespace_t NS = mxx::BOX> struct base {
+        // type shortcuts
         typedef T type;
         typedef base<T,NS> base_type;
         typedef wrapper<T,NS> wrapper_type;
+        typedef void * (*inlet_reg)(void *, short);
+        typedef std::map<int,inlet_reg> inlet_map_t;
+
+        // class scope variables
+        static inlet_map_t inlet_map;
         static t_class * _class;
 
+        // per object variables
         wrapper_type * wrapper;
+
+        // *tors
+        base() : wrapper(0) {
+            post("Max++ base ctor\n");
+        }
+        ~base() {
+            post("Max++ base dtor\n");
+        }
 
         static void class_reg(char * name)
         {
@@ -74,16 +89,13 @@ namespace mxx {
                     (method)wrapper_type::free,
                     sizeof(wrapper_type),
                     (method)NULL, // ??? something for UI objects
-                    0); // FIXME types of constructor parameters
+                    A_GIMME,
+                    0);
         }
         static int class_reg_finally()
         {
             return class_register( NS==BOX ? CLASS_BOX : CLASS_NOBOX, _class );
         }
-
-        typedef void * (*inlet_reg)(void *, short);
-        typedef std::map<int,inlet_reg> inlet_map_t;
-        static inlet_map_t inlet_map;
 
         template < typename F >
             static void method_reg0(char * name, F fun)
@@ -111,12 +123,43 @@ namespace mxx {
             }
 #define method_reg(name, fun) method_reg0(name, MEM_FUN_WRAP(fun))
 
-        void setup( wrapper_type * _w ) {
+        void setup( wrapper_type * _w, long argc, t_atom * argv ) {
             wrapper = _w;
 
             inlet_map_t::iterator it;
             for(it = inlet_map.begin(); it != inlet_map.end(); ++it) {
                 (*it).second(&wrapper->ob, (*it).first);
+            }
+
+            printGimme(argc, argv);
+
+            setup(argc, argv);
+        }
+
+        virtual void setup(long argc, t_atom * argv)
+        {
+        }
+
+        void printGimme( long argc, t_atom * argv ) {
+            long i;
+            t_atom *ap;
+
+            post("there are %ld arguments",argc);
+            for (i = 0, ap = argv; i < argc; i++, ap++) {       // increment ap each time to get to the next atom
+                switch (atom_gettype(ap)) {
+                    case A_LONG:
+                        post("%ld: %ld",i+1,atom_getlong(ap));
+                        break;
+                    case A_FLOAT:
+                        post("%ld: %.2f",i+1,atom_getfloat(ap));
+                        break;
+                    case A_SYM:
+                        post("%ld: %s",i+1, atom_getsym(ap)->s_name);
+                        break;
+                    default:
+                        post("%ld: unknown atom type (%ld)", i+1, atom_gettype(ap));
+                        break;
+                }
             }
         }
     };
@@ -133,7 +176,7 @@ namespace mxx {
         t_object ob;
         T * wrappee;
 
-        static wrapper_type * allocate() {
+        static wrapper_type * allocate(t_symbol *s /* what's that? */, long argc, t_atom * argv) {
             if (! T::_class ) {
                 error("Internal error: class not registered when constructor was called\n");
                 return 0;
@@ -145,7 +188,7 @@ namespace mxx {
                 post("Allocated memory for base<T> using custom operator new()\n");
 
             wrapper -> wrappee = new T;
-            wrapper -> wrappee -> setup( wrapper ); // circular references are fun
+            static_cast<base_type*>(wrapper -> wrappee) -> setup( wrapper, argc, argv ); // circular references are fun
             return wrapper;
         }
 
