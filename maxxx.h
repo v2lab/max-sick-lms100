@@ -260,4 +260,6 @@ inline std::ostream& operator << (std::ostream& os, t_atom * atom)
     return os;
 }
 
+inline std::ostream& operator << (std::ostream& os, t_atom atom) { return (os << &atom); }
+
 #endif

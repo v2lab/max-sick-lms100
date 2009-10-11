@@ -19,7 +19,19 @@ MXX_CLASS(Lms100)
             disconnect();
     }
 
-    void connect(const char * host, long port) {
+    void connect( const char * _send_, long argc, t_atom * argv )
+    {
+        std::string host_str = "192.168.0.1";
+        long port = 2112;
+
+        if (argc>0)
+            host_str = lexical_cast<std::string>(argv[0]);
+
+        if (argc>1)
+            port = lexical_cast<long>(argv[1]);
+
+        const char * host = host_str.c_str();
+
         struct hostent * host_ent;
         struct sockaddr_in addr;
 
