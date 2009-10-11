@@ -9,16 +9,24 @@
 
 MXX_CLASS(Lms100)
 {
+    static std::string STX, ETX;
+
     int sock;
+    void * recvQueue;
+    std::string recvLeftover;
 
-    static const char * STX, * ETX;
-
-    Lms100() : sock(-1) {}
+    Lms100() : sock(-1), recvQueue(0) { }
     ~Lms100() { if (sock>-1) disconnect(); }
+
+    void setup(long argc, t_atom * argv)
+    {
+        recvQueue = qelem_new(&(wrapper->ob), (method)MEM_FUN_WRAP(&Lms100::recv) );
+    }
 
     void connect( const char * _send_, long argc, t_atom * argv );
     void disconnect();
     void send(const char * _send_, long argc, t_atom * argv);
+    void recv();
 
     // SICK data type convertions
     template < typename T > struct SickTraits { static const char * fmt; };
@@ -44,12 +52,12 @@ template <> std::string Lms100::sickFormat(t_atom * atom)
         case A_LONG: return sickFormat(atom_getlong(atom));
         case A_FLOAT: return sickFormat(atom_getfloat(atom));
         case A_SYM: return sickFormat(atom_getsym(atom)->s_name);
-        default: postError("unsupported atom type\n");
+        default: postError("unsupported atom type");
                  return "";
     }
 }
 
-const char * Lms100::STX = "\x2s", * Lms100::ETX = "\x3";
+std::string Lms100::STX = "\x2s", Lms100::ETX = "\x3";
 
 void Lms100::connect( const char * _send_, long argc, t_atom * argv )
 {
@@ -93,13 +101,13 @@ void Lms100::connect( const char * _send_, long argc, t_atom * argv )
     }
 
     if (fcntl(sock, F_SETFL, O_NONBLOCK) < 0) {
-        postError("couldn't make socket non blocking\n");
+        postError("couldn't make socket non blocking");
         postOSError();
         disconnect();
         return;
     }
 
-    // qelem_set(self->recvQueue);
+    qelem_set(recvQueue);
 
     postMessage("connected to %s:%d", host, port);
 }
@@ -107,7 +115,7 @@ void Lms100::connect( const char * _send_, long argc, t_atom * argv )
 void Lms100::disconnect()
 {
     if (sock > -1) {
-        // qelem_unset(self->recvQueue);
+        qelem_unset(recvQueue);
         close(sock);
         sock = -1;
         postMessage("disconnected");
@@ -121,7 +129,7 @@ void Lms100::send(const char * _send_, long argc, t_atom * argv)
     std::string buffer = STX;
 
     if (sock < 0) {
-        postError("can't send, connect first\n");
+        postError("can't send, connect first");
         return;
     }
 
@@ -135,13 +143,67 @@ void Lms100::send(const char * _send_, long argc, t_atom * argv)
 
     // FIXME may return -1 (errno==EAGAIN) if send would block
     if (::send(sock, buffer.c_str(), buffer.length(), 0) != buffer.length()) {
-        postError("something's wrong, sent less bytes then expected\n");
+        postError("something's wrong, sent less bytes then expected");
         postOSError();
     } else {
         postMessage("sent '%s'", buffer.c_str());
     }
 }
 
+void Lms100::recv()
+{
+#define RCV_BUFFER_SIZE 65536
+    char buffer[RCV_BUFFER_SIZE];
+    int write_pos = 0;
+
+    int parse_pos;
+    int recvd = 0;
+
+    if (sock < 0) {
+        postError("attempt to receive while not connected");
+        return;
+    }
+
+    do {
+        // pump data while available
+        while (write_pos < (RCV_BUFFER_SIZE - 1)) {
+            recvd = ::recv(sock, buffer + write_pos, RCV_BUFFER_SIZE - write_pos - 1, 0);
+
+            if (recvd < 0) {
+                if (errno == EAGAIN)
+                    break;
+                else {
+                    postError("error receiving data");
+                    postOSError();
+                    return;
+                }
+            } else if (recvd == 0) {
+                postMessage("connection closed by the server");
+                disconnect();
+                return;
+            }
+
+            write_pos += recvd;
+        }
+
+        recvLeftover += std::string(buffer,write_pos);
+
+        const boost::regex sick_re(STX + "(.*)" + ETX);
+        boost::sregex_token_iterator end, i(recvLeftover.begin(), recvLeftover.end(), sick_re, 1);
+
+        int parsed = 0;
+        while(i != end) {
+            std::string reply( *i++ );
+            postMessage("reply %s\n", reply.c_str());
+            parsed += STX.length() + reply.length() + ETX.length();
+        }
+        recvLeftover = recvLeftover.substr(parsed);
+        write_pos = 0;
+    } while(recvd>0);
+
+    // continue polling
+    qelem_set(recvQueue);
+}
 
 int main()
 {
@@ -153,5 +215,3 @@ int main()
             );
 
 }
-
-

@@ -121,9 +121,9 @@ void tcpclient_disconnect(t_tcpclient * self)
 {
     // assert self!=null
     if (self->sock > 0) {
+        qelem_unset(self->recvQueue);
         close(self->sock);
         self->sock = -1;
-        qelem_unset(self->recvQueue);
     } else {
         error("tcpclient: already disconnected\n");
     }
@@ -362,5 +362,3 @@ void post_os_error(char * prefix)
 {
     error("%s: [%d] %s\n", prefix, errno, strerror(errno));
 }
-
-
