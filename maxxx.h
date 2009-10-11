@@ -86,12 +86,8 @@ namespace mxx {
         wrapper_type * wrapper;
 
         // *tors
-        base() : wrapper(0) {
-            post("Max++ base ctor\n");
-        }
-        ~base() {
-            post("Max++ base dtor\n");
-        }
+        base() : wrapper(0) { }
+        ~base() { }
 
         static void class_reg(char * name)
         {
@@ -151,8 +147,6 @@ namespace mxx {
                 (*it).second(&wrapper->ob, (*it).first);
             }
 
-            printGimme(argc, argv);
-
             setup(argc, argv);
         }
 
@@ -203,9 +197,9 @@ namespace mxx {
             }
             wrapper_type * wrapper = (wrapper_type *)object_alloc(T::_class);
             if (!wrapper)
-                error("Allocation of object memory failed\n");
-            else
-                post("Allocated memory for base<T> using custom operator new()\n");
+                error("Allocation of object memory failed");
+            // FIXME: implement debug facility
+            //else post("Allocated memory for base<T> using custom operator new()\n");
 
             wrapper -> wrappee = new T;
             static_cast<base_type*>(wrapper -> wrappee) -> setup( wrapper, argc, argv ); // circular references are fun
@@ -213,7 +207,8 @@ namespace mxx {
         }
 
         static void free(wrapper_type * wrapper) {
-            post("Deallocating wrapped object using custom operator delete()\n");
+            // FIXME: implement debug facility
+            //post("Deallocating wrapped object using custom operator delete()\n");
             delete wrapper -> wrappee;
         }
     };
