@@ -26,7 +26,9 @@ MXX_CLASS(Lms100)
     void connect( const char * _send_, long argc, t_atom * argv );
     void disconnect();
     void send(const char * _send_, long argc, t_atom * argv);
+
     void recv();
+    void parse(const std::string& reply);
 
     // SICK data type convertions
     template < typename T > struct SickTraits { static const char * fmt; };
@@ -194,7 +196,7 @@ void Lms100::recv()
         int parsed = 0;
         while(i != end) {
             std::string reply( *i++ );
-            postMessage("reply %s\n", reply.c_str());
+            parse(reply);
             parsed += STX.length() + reply.length() + ETX.length();
         }
         recvLeftover = recvLeftover.substr(parsed);
@@ -203,6 +205,11 @@ void Lms100::recv()
 
     // continue polling
     qelem_set(recvQueue);
+}
+
+void Lms100::parse(const std::string& reply)
+{
+    postMessage("reply %s\n", reply.c_str());
 }
 
 int main()
