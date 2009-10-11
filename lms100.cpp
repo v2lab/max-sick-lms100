@@ -5,9 +5,13 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#include <string>
+
 MXX_CLASS(Lms100)
 {
     int sock;
+
+    static const char * STX, * ETX;
 
     Lms100() : sock(-1) {}
     ~Lms100() {
@@ -57,13 +61,44 @@ MXX_CLASS(Lms100)
     }
 
     void disconnect() {
-        post("disconnect\n");
+        if (sock > -1) {
+            // qelem_unset(self->recvQueue);
+            close(sock);
+            sock = -1;
+            postMessage("disconnected");
+        } else {
+            postError("already disconnected");
+        }
     }
 
-    void send(const char * _send_, long argc, t_atom * argv) {
-        printGimme(argc, argv);
+    void send(const char * _send_, long argc, t_atom * argv)
+    {
+        std::string buffer = STX;
+
+        if (sock < 0) {
+            postError("can't send, connect first\n");
+            return;
+        }
+
+        int i;
+        for (i = 0; i < argc; i++) {
+            buffer += lexical_cast<std::string>(argv+i);
+            if (i<(argc-1)) buffer += ' ';
+        }
+
+        buffer += ETX;
+
+        // FIXME may return -1 (errno==EAGAIN) if send would block
+        if (::send(sock, buffer.c_str(), buffer.length(), 0) != buffer.length()) {
+            postError("something's wrong, sent less bytes then expected\n");
+            postOSError();
+        } else {
+            postMessage("sent '%s'", buffer.c_str());
+        }
     }
 };
+
+const char * Lms100::STX = "\x2s", * Lms100::ETX = "\x3";
 
 int main()
 {
