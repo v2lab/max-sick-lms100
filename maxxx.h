@@ -12,6 +12,7 @@
 
 #include <string>
 #include <map>
+#include <ostream>
 
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
@@ -237,4 +238,26 @@ template< class T > struct param_type< T& > {
 
 #define MXX_CLASS(name) struct name : mxx::base<name>
 #define MXX_NOBOX_CLASS(name) struct name : mxx::base<name,mxx::NOBOX>
+
+// easy max atom IO:
+inline std::ostream& operator << (std::ostream& os, t_atom * atom)
+{
+    switch (atom_gettype(atom)) {
+        case A_LONG:
+            os << atom_getlong(atom);
+            break;
+        case A_FLOAT:
+            os << atom_getfloat(atom);
+            break;
+        case A_SYM:
+            os << atom_getsym(atom)->s_name;
+            break;
+        default:
+            error("max++: unsupported atom type (%ld)\n", atom_gettype(atom));
+            break;
+    }
+
+    return os;
+}
+
 #endif
