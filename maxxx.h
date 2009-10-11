@@ -55,6 +55,16 @@ PARAM_CONVERSION(const char *, t_symbol *, sym) { return sym->s_name; }
 
 #include "pfun/auto_reg_cb.hpp"
 
+// special treatment of gimmes:
+template< typename WRAPPER >
+struct auto_regger< void(*)(WRAPPER*, t_symbol *, long, t_atom*), 4 > {
+    typedef void(*sig_t)(WRAPPER*, t_symbol *, long, t_atom*);
+    static void reg(sig_t cb, t_class* _class, char * _name)
+    {
+        class_addmethod(_class, (method) cb, _name, A_GIMME, 0);
+    }
+};
+
 namespace mxx {
 
     template<class T, mxx::namespace_t NS = mxx::BOX> struct wrapper;
