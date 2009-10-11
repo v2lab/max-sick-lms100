@@ -102,6 +102,15 @@ namespace mxx {
                     A_GIMME,
                     0);
         }
+
+        static const char * className() { return _class->c_sym->s_name; }
+// FIXME: in MSVC , __VA_ARGS__ works around stupid standard, in GCC we need ##
+#define postError(fmt, ...) error("%s: " fmt "\n", className(), ## __VA_ARGS__)
+#define postMessage(fmt, ...) post("%s: " fmt "\n", className(), ## __VA_ARGS__)
+#define postOSError() postError("[%d] %s", errno, strerror(errno))
+
+
+
         static int class_reg_finally()
         {
             return class_register( NS==BOX ? CLASS_BOX : CLASS_NOBOX, _class );
