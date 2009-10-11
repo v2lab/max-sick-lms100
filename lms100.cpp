@@ -71,34 +71,65 @@ MXX_CLASS(Lms100)
         }
     }
 
-    void send(const char * _send_, long argc, t_atom * argv)
+    void send(const char * _send_, long argc, t_atom * argv);
+
+    // SICK data type convertions
+    template < typename T > struct SickTraits { static const char * fmt; };
+
+    template < typename T > static std::string sickFormat(T val)
     {
-        std::string buffer = STX;
-
-        if (sock < 0) {
-            postError("can't send, connect first\n");
-            return;
-        }
-
-        int i;
-        for (i = 0; i < argc; i++) {
-            buffer += lexical_cast<std::string>(argv+i);
-            if (i<(argc-1)) buffer += ' ';
-        }
-
-        buffer += ETX;
-
-        // FIXME may return -1 (errno==EAGAIN) if send would block
-        if (::send(sock, buffer.c_str(), buffer.length(), 0) != buffer.length()) {
-            postError("something's wrong, sent less bytes then expected\n");
-            postOSError();
-        } else {
-            postMessage("sent '%s'", buffer.c_str());
-        }
+        const size_t len = 32; // this version is only used for long and float
+        char buffer[ len ];
+        snprintf(buffer, len, SickTraits<T>::fmt, val);
+        return buffer;
     }
+
 };
 
+template<> const char * Lms100::SickTraits< long >::fmt = "%lx";
+template<> const char * Lms100::SickTraits< float >::fmt = "%f";
+
+template <> std::string Lms100::sickFormat(char * val) { return val; }
+
+template <> std::string Lms100::sickFormat(t_atom * atom)
+{
+    switch(atom_gettype(atom)) {
+        case A_LONG: return sickFormat(atom_getlong(atom));
+        case A_FLOAT: return sickFormat(atom_getfloat(atom));
+        case A_SYM: return sickFormat(atom_getsym(atom)->s_name);
+        default: postError("unsupported atom type\n");
+                 return "";
+    }
+}
+
 const char * Lms100::STX = "\x2s", * Lms100::ETX = "\x3";
+
+void Lms100::send(const char * _send_, long argc, t_atom * argv)
+{
+    std::string buffer = STX;
+
+    if (sock < 0) {
+        postError("can't send, connect first\n");
+        return;
+    }
+
+    int i;
+    for (i = 0; i < argc; i++) {
+        buffer += sickFormat(argv+i);
+        if (i<(argc-1)) buffer += ' ';
+    }
+
+    buffer += ETX;
+
+    // FIXME may return -1 (errno==EAGAIN) if send would block
+    if (::send(sock, buffer.c_str(), buffer.length(), 0) != buffer.length()) {
+        postError("something's wrong, sent less bytes then expected\n");
+        postOSError();
+    } else {
+        postMessage("sent '%s'", buffer.c_str());
+    }
+}
+
 
 int main()
 {
@@ -107,7 +138,7 @@ int main()
             (("connect", connect))
             (("disconnect", disconnect))
             (("send", send))
-        );
+            );
 
 }
 

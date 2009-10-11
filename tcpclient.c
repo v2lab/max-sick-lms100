@@ -190,7 +190,7 @@ void tcpclient_send(t_tcpclient * self, t_symbol * s, long argc, t_atom * argv)
                 buffer_size += used;
                 break;
             default:
-                error(": unsupported atom type ([%ld]  %ld)", i+1, atom_gettype(ap));
+                error("tcpclient: unsupported atom type ([%ld]  %ld)", i+1, atom_gettype(ap));
                 break;
         }
         if (i<(argc-1)) {
