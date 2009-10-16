@@ -7,12 +7,15 @@
 
 #include <boost/spirit/include/classic_core.hpp>
 #include <boost/spirit/include/classic_push_back_actor.hpp>
+#include <boost/assign/list_of.hpp>
+using namespace boost::assign;
+
+#include <iostream>
+
 
 template<> const char * Lms100::SickTraits< long >::fmt = "%lx";
 template<> const char * Lms100::SickTraits< float >::fmt = "%f";
-
 template <> std::string Lms100::sickFormat(char * val) { return val; }
-
 template <> std::string Lms100::sickFormat(t_atom * atom)
 {
     switch(atom_gettype(atom)) {
@@ -23,7 +26,6 @@ template <> std::string Lms100::sickFormat(t_atom * atom)
                  return "";
     }
 }
-
 std::string Lms100::STX = "\x2s", Lms100::ETX = "\x3";
 
 void Lms100::connect( const char * _send_, long argc, t_atom * argv )
@@ -161,7 +163,7 @@ void Lms100::recv()
         int parsed = 0;
         while(i != end) {
             std::string reply( *i++ );
-            parse(reply);
+            parseMsg(reply);
             parsed += STX.length() + reply.length() + ETX.length();
         }
         recvLeftover = recvLeftover.substr(parsed);
@@ -172,23 +174,79 @@ void Lms100::recv()
     qelem_set(recvQueue);
 }
 
-std::vector<t_atom> Lms100::parse(const std::string& reply)
+struct push_back_ok_a {
+    std::vector<mxx::Atomic> & vec;
+    int ok;
+    push_back_ok_a(std::vector<mxx::Atomic>& vec_, int ok_ = 1) : vec(vec_), ok(ok_) {}
+    void operator()(int val) const { vec.push_back( (val == ok)?"ok":"failed" ); }
+};
+
+struct push_back_atomic_a {
+    std::vector<mxx::Atomic> & vec;
+    push_back_atomic_a(std::vector<mxx::Atomic>& vec_) : vec(vec_) {}
+    void operator()(mxx::Atomic val) const { vec.push_back(val); }
+    void operator()(long val) const { vec.push_back(val); }
+    void operator()(int val) const { vec.push_back((long)val); }
+    void operator()(unsigned val) const { vec.push_back((long)val); }
+};
+
+template< typename KEY >
+struct push_back_mapped_a {
+    typedef std::map<KEY, std::string> dict_t;
+    std::vector<mxx::Atomic> & vec;
+    dict_t dict;
+    const char * def;
+    push_back_mapped_a( std::vector<mxx::Atomic>& vec_, const dict_t& dict_, const char* def_ = NULL )
+        : vec(vec_), dict(dict_), def(def_) {}
+    void operator()(KEY val) const {
+        typename dict_t::const_iterator it = dict.find(val);
+        if (it != dict.end()) vec.push_back((*it).second);
+        else if (def) vec.push_back(def);
+        else vec.push_back("unknown");
+    }
+};
+
+std::map<int, std::string> access_mode_map = map_list_of
+    (0,"run")
+    (1,"operator")
+    (2,"maintainance")
+    (3,"authorized-client")
+    (4,"service");
+std::map<int, std::string> scan_cfg_status_map = map_list_of
+    (0,"ok");
+
+std::vector<mxx::Atomic> Lms100::parseMsg(const std::string& reply)
 {
     using namespace BOOST_SPIRIT_CLASSIC_NS;
-    std::vector< t_atom > argv;
+    std::vector< mxx::Atomic > argv;
 
+    // FIXME: this should work in tests just as well
     //postMessage("reply %s\n", reply.c_str());
 
-    /*
-    parse( reply,
+#define STR2STR(a,b) str_p(a)[push_back_a(argv, b) ]
+
+    if (parse( reply.c_str(),
             (
-             str_p("AN") >> str_p("mLMLSetDisp")[... "display"] >> int_p[ .... "ok/not ok"]
+             str_p("AN") >> (
+                 ( // responses where 1 means ok and anything else means failed
+                   STR2STR("mLMLSetDisp" , "display") |
+                   STR2STR("SetAccessMode" , "set-access-mode") |
+                   STR2STR("Run" , "run"))
+                 >> int_p [ push_back_ok_a(argv) ] |
+                 // -------
+                 STR2STR("GetAccessMode","access-mode") >> int_p [ push_back_mapped_a<int>(argv, access_mode_map) ] |
+                 STR2STR("mLMPsetscancfg", "set-scan-cfg") >> hex_p [ push_back_mapped_a<int>(argv, scan_cfg_status_map) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ]
+                 )
             ),
             // delimeter
-            space_p);
-            */
-
-    return argv;
+            space_p).full)
+        return argv;
+    else
+        if (argv.size() == 0)
+            return list_of(std::string("unknown-message"))(reply);
+        else
+            return list_of(std::string("misformed-message"))(reply);
+#undef STR2STR
 }
 
 #ifndef TESTING

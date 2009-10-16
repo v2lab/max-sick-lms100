@@ -19,9 +19,13 @@
 using boost::lexical_cast;
 using boost::bad_lexical_cast;
 
+#include <boost/variant.hpp>
+
 #include "pfun/mem_fn_wrap.hpp"
 
 namespace mxx {
+    using boost::variant;
+
     template< typename T > struct type_tag;
 #define MXX_type_tag(type,tag) \
     template<> struct type_tag< type > { static const long value = tag; }
@@ -38,6 +42,8 @@ namespace mxx {
         BOX,
         NOBOX,
     };
+
+    typedef variant< long, float, std::string > Atomic;
 }
 
 /* types supported via conversions */
@@ -256,5 +262,6 @@ inline std::ostream& operator << (std::ostream& os, t_atom * atom)
 }
 
 inline std::ostream& operator << (std::ostream& os, t_atom atom) { return (os << &atom); }
+
 
 #endif

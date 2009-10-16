@@ -28,7 +28,7 @@ MXX_CLASS(Lms100)
 
     void recv();
 
-    static std::vector<t_atom> parse(const std::string& reply);
+    static std::vector<mxx::Atomic> parseMsg(const std::string& reply);
 
     // SICK data type convertions
     template < typename T > struct SickTraits { static const char * fmt; };
