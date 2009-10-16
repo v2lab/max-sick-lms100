@@ -1,47 +1,12 @@
-#include "maxxx.h"
+#include "lms100.hpp"
 
 // BSD sockets
 #include <netdb.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include <string>
-
-MXX_CLASS(Lms100)
-{
-    static std::string STX, ETX;
-
-    int sock;
-    void * recvQueue;
-    std::string recvLeftover;
-
-    Lms100() : sock(-1), recvQueue(0) { }
-    ~Lms100() { if (sock>-1) disconnect(); }
-
-    void setup(long argc, t_atom * argv)
-    {
-        recvQueue = qelem_new(&(wrapper->ob), (method)MEM_FUN_WRAP(&Lms100::recv) );
-    }
-
-    void connect( const char * _send_, long argc, t_atom * argv );
-    void disconnect();
-    void send(const char * _send_, long argc, t_atom * argv);
-
-    void recv();
-    void parse(const std::string& reply);
-
-    // SICK data type convertions
-    template < typename T > struct SickTraits { static const char * fmt; };
-
-    template < typename T > static std::string sickFormat(T val)
-    {
-        const size_t len = 32; // this version is only used for long and float
-        char buffer[ len ];
-        snprintf(buffer, len, SickTraits<T>::fmt, val);
-        return buffer;
-    }
-
-};
+#include <boost/spirit/include/classic_core.hpp>
+#include <boost/spirit/include/classic_push_back_actor.hpp>
 
 template<> const char * Lms100::SickTraits< long >::fmt = "%lx";
 template<> const char * Lms100::SickTraits< float >::fmt = "%f";
@@ -207,10 +172,26 @@ void Lms100::recv()
     qelem_set(recvQueue);
 }
 
-void Lms100::parse(const std::string& reply)
+std::vector<t_atom> Lms100::parse(const std::string& reply)
 {
-    postMessage("reply %s\n", reply.c_str());
+    using namespace BOOST_SPIRIT_CLASSIC_NS;
+    std::vector< t_atom > argv;
+
+    //postMessage("reply %s\n", reply.c_str());
+
+    /*
+    parse( reply,
+            (
+             str_p("AN") >> str_p("mLMLSetDisp")[... "display"] >> int_p[ .... "ok/not ok"]
+            ),
+            // delimeter
+            space_p);
+            */
+
+    return argv;
 }
+
+#ifndef TESTING
 
 int main()
 {
@@ -222,3 +203,5 @@ int main()
             );
 
 }
+
+#endif
