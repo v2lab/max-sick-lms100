@@ -79,6 +79,9 @@ BOOST_AUTO_TEST_CASE( test_test )
 
     BOOST_CHECK_EQUAL( parse("RA LMPscancfg FFFFFFFF FF FFFFFFFF FFFFFFFF FFFFFFFF"),
             "scan-config 4.29497e+09 255 4.29497e+09 -1 -1");
+
+    BOOST_CHECK_EQUAL( parse("RA F1 0 FF FF"), "mean-filter 0 255 255");
+    BOOST_CHECK_EQUAL( parse("RA F1 1 FF FF"), "mean-filter 1 255 255");
 }
 
 

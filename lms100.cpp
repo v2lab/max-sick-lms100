@@ -298,6 +298,7 @@ struct LmsParser : public grammar<LmsParser>
                         STR2STR("8", "device-ready") >> bool_1
                         | STR2STR("STlms", "device-status") >> ENUM(device_status_map) >> bool_0 >> ignore >> str >> ignore >> str >> u32 >> u32 >> u32
                         | STR2STR("LMPscancfg", "scan-config") >> u32 >> u8 >> u32 >> i32 >> i32
+                        | STR2STR("F1", "mean-filter") >> bool_1 >> u8 >> u8
                         );
 
             u32 = hex_p[push_back_u32_a(self.vec)];
