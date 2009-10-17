@@ -43,7 +43,7 @@ namespace mxx {
         NOBOX,
     };
 
-    typedef variant< long, float, std::string > Atomic;
+    typedef variant< long, double, std::string > Atomic;
 }
 
 /* types supported via conversions */

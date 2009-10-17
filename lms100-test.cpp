@@ -74,8 +74,11 @@ BOOST_AUTO_TEST_CASE( test_test )
             "device-status reserved 0 bar quux 294191052 294191052 294191052");
     BOOST_CHECK_EQUAL( parse("RA STlms 10 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
             "device-status reserved 0 bar quux 294191052 294191052 294191052");
-    BOOST_CHECK_EQUAL( parse("RA STlms 11 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
- "device-status reserved 0 bar quux 294191052 294191052 294191052");
+    BOOST_CHECK_EQUAL( parse("RA STlms 11 2 foo bar baz quux FFFFFFFF FFFFFFFF FFFFFFFF"),
+ "device-status reserved 0 bar quux 4.29497e+09 4.29497e+09 4.29497e+09");
+
+    BOOST_CHECK_EQUAL( parse("RA LMPscancfg FFFFFFFF FF FFFFFFFF FFFFFFFF FFFFFFFF"),
+            "scan-config 4.29497e+09 255 4.29497e+09 -1 -1");
 }
 
 

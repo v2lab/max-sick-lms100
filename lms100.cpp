@@ -1,3 +1,6 @@
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
+
 #include "lms100.hpp"
 
 // BSD sockets
@@ -11,7 +14,6 @@
 using namespace boost::assign;
 
 #include <iostream>
-
 
 template<> const char * Lms100::SickTraits< long >::fmt = "%lx";
 template<> const char * Lms100::SickTraits< float >::fmt = "%f";
@@ -191,6 +193,25 @@ struct push_back_atomic_a {
     void operator()(const char* const& begin, const char* const& end) const { vec.push_back( std::string(begin,end) ); }
 };
 
+struct push_back_u32_a {
+    std::vector<mxx::Atomic> & vec;
+    push_back_u32_a(std::vector<mxx::Atomic>& vec_) : vec(vec_) {}
+    void operator()(unsigned val) const
+    {
+        if (val <= INT32_MAX)
+            vec.push_back( (long)val);
+        else
+            // max only supports signed 32bit integers, we've got to convert to floating point
+            vec.push_back( (float)val );
+    }
+};
+
+struct push_back_int_a {
+    std::vector<mxx::Atomic> & vec;
+    push_back_int_a(std::vector<mxx::Atomic>& vec_) : vec(vec_) {}
+    void operator()(unsigned val) const { vec.push_back( *(long*)(&val) ); }
+};
+
 template< typename KEY >
 struct push_back_mapped_a {
     typedef std::map<KEY, std::string> dict_t;
@@ -264,21 +285,24 @@ struct LmsParser : public grammar<LmsParser>
 #define ENUM(dict) int_p[ push_back_mapped_a<int>(self.vec, dict) ]
             full_grammar =
                 str_p("AN") >> (
-                        STR2STR("mLMLSetDisp", "display") >> ok |
-                        STR2STR("SetAccessMode", "set-access-mode") >> ok |
-                        STR2STR("Run", "run") >> bool_1 |
-                        STR2STR("GetAccessMode", "access-mode") >> ENUM(access_mode_map) |
-                        STR2STR("mLMPsetscancfg", "set-scan-cfg") >> ENUM(scan_cfg_status_map) >> !(u32 >> u32 >> u32 >> u32 >> u32)
-                        ) |
-                str_p("EA") >> (
+                        STR2STR("mLMLSetDisp", "display") >> ok
+                        | STR2STR("SetAccessMode", "set-access-mode") >> ok
+                        | STR2STR("Run", "run") >> bool_1
+                        | STR2STR("GetAccessMode", "access-mode") >> ENUM(access_mode_map)
+                        | STR2STR("mLMPsetscancfg", "set-scan-cfg") >> ENUM(scan_cfg_status_map) >> !(u32 >> u32 >> u32 >> u32 >> u32)
+                        )
+                | str_p("EA") >> (
                         STR2STR("LMDscandata", "scanning") >> bool_1
-                        ) |
-                str_p("RA") >> (
-                        STR2STR("8", "device-ready") >> bool_1 |
-                        STR2STR("STlms", "device-status") >> ENUM(device_status_map) >> bool_0 >> ignore >> str >> ignore >> str >> u32 >> u32 >> u32
+                        )
+                | str_p("RA") >> (
+                        STR2STR("8", "device-ready") >> bool_1
+                        | STR2STR("STlms", "device-status") >> ENUM(device_status_map) >> bool_0 >> ignore >> str >> ignore >> str >> u32 >> u32 >> u32
+                        | STR2STR("LMPscancfg", "scan-config") >> u32 >> u8 >> u32 >> i32 >> i32
                         );
 
-            u32 = hex_p[push_back_atomic_a(self.vec)];
+            u32 = hex_p[push_back_u32_a(self.vec)];
+            u8 = hex_p[push_back_int_a(self.vec)]; // convert to long since max knows no better
+            i32 = hex_p[push_back_int_a(self.vec)];
             ignore = lexeme_d[+graph_p];
             str = ignore[ push_back_atomic_a(self.vec) ];
             bool_1 = int_p[push_back_bool_a(self.vec)];
@@ -291,7 +315,7 @@ struct LmsParser : public grammar<LmsParser>
         rule<ScannerT> full_grammar,
             ignore, str,
             bool_1, bool_0, ok,
-            u32;
+            u32, u8, i32;
 
         rule<ScannerT> const& start() const { return full_grammar; }
     };
