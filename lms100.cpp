@@ -249,43 +249,64 @@ Enum device_status_map = map_list_of
     (10,"reserved")
     (11,"reserved");
 
+using namespace BOOST_SPIRIT_CLASSIC_NS;
+struct LmsParser : public grammar<LmsParser>
+{
+    std::vector<mxx::Atomic>& vec;
+    LmsParser( std::vector<mxx::Atomic>& vec_ ) : vec(vec_) {}
+
+    template <typename ScannerT>
+    struct definition
+    {
+        definition(LmsParser const& self)
+        {
+#define STR2STR(a,b) str_p(a)[push_back_a(self.vec, b) ]
+#define ENUM(dict) int_p[ push_back_mapped_a<int>(self.vec, dict) ]
+            full_grammar =
+                str_p("AN") >> (
+                        STR2STR("mLMLSetDisp", "display") >> ok |
+                        STR2STR("SetAccessMode", "set-access-mode") >> ok |
+                        STR2STR("Run", "run") >> bool_1 |
+                        STR2STR("GetAccessMode", "access-mode") >> ENUM(access_mode_map) |
+                        STR2STR("mLMPsetscancfg", "set-scan-cfg") >> ENUM(scan_cfg_status_map) >> !(u32 >> u32 >> u32 >> u32 >> u32)
+                        ) |
+                str_p("EA") >> (
+                        STR2STR("LMDscandata", "scanning") >> bool_1
+                        ) |
+                str_p("RA") >> (
+                        STR2STR("8", "device-ready") >> bool_1 |
+                        STR2STR("STlms", "device-status") >> ENUM(device_status_map) >> bool_0 >> ignore >> str >> ignore >> str >> u32 >> u32 >> u32
+                        );
+
+            u32 = hex_p[push_back_atomic_a(self.vec)];
+            ignore = lexeme_d[+graph_p];
+            str = ignore[ push_back_atomic_a(self.vec) ];
+            bool_1 = int_p[push_back_bool_a(self.vec)];
+            bool_0 = int_p[push_back_bool_a(self.vec, 0)];
+            ok = int_p[push_back_ok_a(self.vec)];
+#undef STR2STR
+#undef ENUM
+        }
+
+        rule<ScannerT> full_grammar,
+            ignore, str,
+            bool_1, bool_0, ok,
+            u32;
+
+        rule<ScannerT> const& start() const { return full_grammar; }
+    };
+};
 
 std::vector<mxx::Atomic> Lms100::parseMsg(const std::string& reply)
 {
-    using namespace BOOST_SPIRIT_CLASSIC_NS;
     std::vector< mxx::Atomic > argv;
 
     // FIXME: this should work in tests just as well
     //postMessage("reply %s\n", reply.c_str());
 
-#define STR2STR(a,b) str_p(a)[push_back_a(argv, b) ]
+    LmsParser parser(argv);
 
-    parse_info<> info =
-        parse( reply.c_str(),
-            (
-             str_p("AN") >> (
-                 ( // responses where 1 means ok and anything else means failed
-                   STR2STR("mLMLSetDisp" , "display") |
-                   STR2STR("SetAccessMode" , "set-access-mode") |
-                   STR2STR("Run" , "run"))
-                 >> int_p [ push_back_ok_a(argv) ] |
-                 // -------
-                 STR2STR("GetAccessMode","access-mode") >> int_p [ push_back_mapped_a<int>(argv, access_mode_map) ] |
-                 STR2STR("mLMPsetscancfg", "set-scan-cfg") >> hex_p [ push_back_mapped_a<int>(argv, scan_cfg_status_map) ] >> !(hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ])
-                 ) |
-             str_p("EA") >> (
-                 STR2STR("LMDscandata","scanning") >> int_p [ push_back_atomic_a(argv) ]
-                 ) |
-             str_p("RA") >> (
-                 STR2STR("8","device-ready") >> int_p [ push_back_bool_a(argv) ] |
-                 STR2STR("STlms","device-status") >> int_p[ push_back_mapped_a<int>(argv, device_status_map)] >> int_p[ push_back_bool_a(argv,0) ]
-                    >> lexeme_d[+graph_p] >> lexeme_d[+graph_p][ push_back_atomic_a(argv) ]
-                    >> lexeme_d[+graph_p] >> lexeme_d[+graph_p][ push_back_atomic_a(argv) ]
-                    >> hex_p[ push_back_atomic_a(argv) ] >> hex_p[ push_back_atomic_a(argv) ] >> hex_p[ push_back_atomic_a(argv) ]
-                 )
-            ),
-            // delimeter
-            space_p);
+    parse_info<> info = parse( reply.c_str(), parser, space_p);
 
     if (info.full)
         return argv;
@@ -296,7 +317,6 @@ std::vector<mxx::Atomic> Lms100::parseMsg(const std::string& reply)
             std::cerr << "*** Parsed this:" << std::string( reply.c_str(), info.stop) << "\n";
             return list_of(std::string("misformed-message"))(reply);
         }
-#undef STR2STR
 }
 
 #ifndef TESTING

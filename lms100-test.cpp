@@ -32,8 +32,8 @@ BOOST_AUTO_TEST_CASE( test_test )
     BOOST_CHECK_EQUAL( parse("AN SetAccessMode 0"), "set-access-mode failed");
     BOOST_CHECK_EQUAL( parse("AN SetAccessMode 1"), "set-access-mode ok");
 
-    BOOST_CHECK_EQUAL( parse("AN Run 0"), "run failed");
-    BOOST_CHECK_EQUAL( parse("AN Run 1"), "run ok");
+    BOOST_CHECK_EQUAL( parse("AN Run 0"), "run 0");
+    BOOST_CHECK_EQUAL( parse("AN Run 1"), "run 1");
 
     BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 0 12345678 FF 12345678 12345678 12345678"),
             "set-scan-cfg ok 305419896 255 305419896 305419896 305419896");
