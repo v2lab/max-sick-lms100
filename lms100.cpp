@@ -188,6 +188,7 @@ struct push_back_atomic_a {
     void operator()(long val) const { vec.push_back(val); }
     void operator()(int val) const { vec.push_back((long)val); }
     void operator()(unsigned val) const { vec.push_back((long)val); }
+    void operator()(const char* const& begin, const char* const& end) const { vec.push_back( std::string(begin,end) ); }
 };
 
 template< typename KEY >
@@ -206,14 +207,48 @@ struct push_back_mapped_a {
     }
 };
 
-std::map<int, std::string> access_mode_map = map_list_of
+struct push_back_bool_a {
+    typedef std::map<int, std::string> dict_t;
+    std::vector<mxx::Atomic> & vec;
+
+    int true_val;
+
+    push_back_bool_a( std::vector<mxx::Atomic>& vec_, int true_val_ = 1)
+        : vec(vec_), true_val(true_val_) {}
+
+    void operator()(int val) const { vec.push_back( (val == true_val) ? 1l : 0l); }
+};
+
+typedef std::map<int, std::string> Enum;
+Enum access_mode_map = map_list_of
     (0,"run")
     (1,"operator")
     (2,"maintainance")
     (3,"authorized-client")
     (4,"service");
-std::map<int, std::string> scan_cfg_status_map = map_list_of
-    (0,"ok");
+
+Enum scan_cfg_status_map = map_list_of
+    (0,"ok")
+    (1, "bad-frequency")
+    (2, "bad-angular-resolution")
+    (3, "bad-freq-and-resolution")
+    (4, "bad-area")
+    (5, "other-error");
+
+Enum device_status_map = map_list_of
+    (0,"undefined")
+    (1,"initialisation")
+    (2,"configuration")
+    (3,"idle")
+    (4,"rotated")
+    (5,"in-preparation")
+    (6,"ready")
+    (7,"ready-for-measurement")
+    (8,"reserved")
+    (9,"reserved")
+    (10,"reserved")
+    (11,"reserved");
+
 
 std::vector<mxx::Atomic> Lms100::parseMsg(const std::string& reply)
 {
@@ -225,7 +260,8 @@ std::vector<mxx::Atomic> Lms100::parseMsg(const std::string& reply)
 
 #define STR2STR(a,b) str_p(a)[push_back_a(argv, b) ]
 
-    if (parse( reply.c_str(),
+    parse_info<> info =
+        parse( reply.c_str(),
             (
              str_p("AN") >> (
                  ( // responses where 1 means ok and anything else means failed
@@ -235,17 +271,31 @@ std::vector<mxx::Atomic> Lms100::parseMsg(const std::string& reply)
                  >> int_p [ push_back_ok_a(argv) ] |
                  // -------
                  STR2STR("GetAccessMode","access-mode") >> int_p [ push_back_mapped_a<int>(argv, access_mode_map) ] |
-                 STR2STR("mLMPsetscancfg", "set-scan-cfg") >> hex_p [ push_back_mapped_a<int>(argv, scan_cfg_status_map) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ]
+                 STR2STR("mLMPsetscancfg", "set-scan-cfg") >> hex_p [ push_back_mapped_a<int>(argv, scan_cfg_status_map) ] >> !(hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ] >> hex_p [ push_back_atomic_a(argv) ])
+                 ) |
+             str_p("EA") >> (
+                 STR2STR("LMDscandata","scanning") >> int_p [ push_back_atomic_a(argv) ]
+                 ) |
+             str_p("RA") >> (
+                 STR2STR("8","device-ready") >> int_p [ push_back_bool_a(argv) ] |
+                 STR2STR("STlms","device-status") >> int_p[ push_back_mapped_a<int>(argv, device_status_map)] >> int_p[ push_back_bool_a(argv,0) ]
+                    >> lexeme_d[+graph_p] >> lexeme_d[+graph_p][ push_back_atomic_a(argv) ]
+                    >> lexeme_d[+graph_p] >> lexeme_d[+graph_p][ push_back_atomic_a(argv) ]
+                    >> hex_p[ push_back_atomic_a(argv) ] >> hex_p[ push_back_atomic_a(argv) ] >> hex_p[ push_back_atomic_a(argv) ]
                  )
             ),
             // delimeter
-            space_p).full)
+            space_p);
+
+    if (info.full)
         return argv;
     else
         if (argv.size() == 0)
             return list_of(std::string("unknown-message"))(reply);
-        else
+        else {
+            std::cerr << "*** Parsed this:" << std::string( reply.c_str(), info.stop) << "\n";
             return list_of(std::string("misformed-message"))(reply);
+        }
 #undef STR2STR
 }
 

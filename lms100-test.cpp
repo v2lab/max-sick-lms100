@@ -43,6 +43,39 @@ BOOST_AUTO_TEST_CASE( test_test )
     BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 4"), "set-scan-cfg bad-area");
     BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 5"), "set-scan-cfg other-error");
 
+    BOOST_CHECK_EQUAL( parse("EA LMDscandata 0"), "scanning 0");
+    BOOST_CHECK_EQUAL( parse("EA LMDscandata 1"), "scanning 1");
+
+    BOOST_CHECK_EQUAL( parse("RA 8 0"), "device-ready 0");
+    BOOST_CHECK_EQUAL( parse("RA 8 1"), "device-ready 1");
+    BOOST_CHECK_EQUAL( parse("RA 8 2"), "device-ready 0"); // anything but 1 is not-ready
+
+    BOOST_CHECK_EQUAL( parse("RA STlms 0 0 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
+            "device-status undefined 1 bar quux 294191052 294191052 294191052");
+    BOOST_CHECK_EQUAL( parse("RA STlms 1 1 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
+            "device-status initialisation 0 bar quux 294191052 294191052 294191052");
+    BOOST_CHECK_EQUAL( parse("RA STlms 2 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
+            "device-status configuration 0 bar quux 294191052 294191052 294191052");
+
+    BOOST_CHECK_EQUAL( parse("RA STlms 3 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
+            "device-status idle 0 bar quux 294191052 294191052 294191052");
+    BOOST_CHECK_EQUAL( parse("RA STlms 4 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
+            "device-status rotated 0 bar quux 294191052 294191052 294191052");
+    BOOST_CHECK_EQUAL( parse("RA STlms 5 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
+            "device-status in-preparation 0 bar quux 294191052 294191052 294191052");
+    BOOST_CHECK_EQUAL( parse("RA STlms 6 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
+            "device-status ready 0 bar quux 294191052 294191052 294191052");
+    BOOST_CHECK_EQUAL( parse("RA STlms 7 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
+            "device-status ready-for-measurement 0 bar quux 294191052 294191052 294191052");
+
+    BOOST_CHECK_EQUAL( parse("RA STlms 8 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
+            "device-status reserved 0 bar quux 294191052 294191052 294191052");
+    BOOST_CHECK_EQUAL( parse("RA STlms 9 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
+            "device-status reserved 0 bar quux 294191052 294191052 294191052");
+    BOOST_CHECK_EQUAL( parse("RA STlms 10 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
+            "device-status reserved 0 bar quux 294191052 294191052 294191052");
+    BOOST_CHECK_EQUAL( parse("RA STlms 11 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
+ "device-status reserved 0 bar quux 294191052 294191052 294191052");
 }
 
 
