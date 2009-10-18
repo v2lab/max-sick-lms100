@@ -8,8 +8,17 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+// uncomment to debug the parser
+//#define BOOST_SPIRIT_DEBUG
+#define PHOENIX_LIMIT 6
+#define BOOST_SPIRIT_SELECT_LIMIT 6
 #include <boost/spirit/include/classic_core.hpp>
 #include <boost/spirit/include/classic_push_back_actor.hpp>
+#include <boost/spirit/include/classic_loops.hpp>
+#include <boost/spirit/include/classic_attribute.hpp>
+#include <boost/spirit/include/classic_for.hpp>
+#include <boost/spirit/include/classic_select.hpp>
+#include <boost/spirit/include/phoenix1_functions.hpp>
 #include <boost/assign/list_of.hpp>
 using namespace boost::assign;
 
@@ -240,6 +249,18 @@ struct push_back_bool_a {
     void operator()(int val) const { vec.push_back( (val == true_val) ? 1l : 0l); }
 };
 
+struct send_data_a {
+    Lms100::ChannelReceiver const& recv;
+    int const&i, &n;
+    float* & data;
+    send_data_a(Lms100::ChannelReceiver const&  recv_, int const&  i_, int const&  n_, float* &  data_) : recv(recv_),i(i_),n(n_),data(data_) {}
+    template< typename Num > void operator() (Num) const { recv( i, n, data ); }
+    template< typename First, typename Second > void operator() (First, Second) const {
+        if (recv)
+            recv( i, n, data );
+    }
+};
+
 typedef std::map<int, std::string> Enum;
 Enum access_mode_map = map_list_of
     (0,"run")
@@ -271,16 +292,25 @@ Enum device_status_map = map_list_of
     (11,"reserved");
 
 using namespace BOOST_SPIRIT_CLASSIC_NS;
+using namespace phoenix;
+
 struct LmsParser : public grammar<LmsParser>
 {
+
     std::vector<mxx::Atomic>& vec;
-    LmsParser( std::vector<mxx::Atomic>& vec_ ) : vec(vec_) {}
+    const Lms100::ChannelReceiver& channel_receiver;
+    LmsParser( std::vector<mxx::Atomic>& vec_, const Lms100::ChannelReceiver& channel_receiver_ ) : vec(vec_), channel_receiver(channel_receiver_) {}
+
 
     template <typename ScannerT>
     struct definition
     {
         definition(LmsParser const& self)
         {
+            int i, j, n, ch_idx;
+#define LMS_MAX_SAMPLES_PER_SCAN 1082
+            float chdata[LMS_MAX_SAMPLES_PER_SCAN], *pchdata = chdata;
+
 #define STR2STR(a,b) str_p(a)[push_back_a(self.vec, b) ]
 #define ENUM(dict) int_p[ push_back_mapped_a<int>(self.vec, dict) ]
             full_grammar =
@@ -299,7 +329,9 @@ struct LmsParser : public grammar<LmsParser>
                         | STR2STR("STlms", "device-status") >> ENUM(device_status_map) >> bool_0 >> ignore >> str >> ignore >> str >> u32 >> u32 >> u32
                         | STR2STR("LMPscancfg", "scan-config") >> u32 >> u8 >> u32 >> i32 >> i32
                         | STR2STR("F1", "mean-filter") >> bool_1 >> u8 >> u8
-                        );
+                        | scan_data
+                        )
+                | str_p("SN") >> scan_data;
 
             u32 = hex_p[push_back_u32_a(self.vec)];
             u8 = hex_p[push_back_int_a(self.vec)]; // convert to long since max knows no better
@@ -309,27 +341,52 @@ struct LmsParser : public grammar<LmsParser>
             bool_1 = int_p[push_back_bool_a(self.vec)];
             bool_0 = int_p[push_back_bool_a(self.vec, 0)];
             ok = int_p[push_back_ok_a(self.vec)];
+            scan_data = str_p("LMDscandata")
+                >> repeat_p(16)[ignore]
+                >> int_p[ var(i) = arg1 ] >> repeat_p(boost::ref(i))[ ignore >> ignore ] // encoders
+                >> int_p[ var(i) = arg1 ] >> repeat_p(boost::ref(i))[ scan_data_channel ] // 16-bit channels
+                >> int_p[ var(i) = arg1 ] >> repeat_p(boost::ref(i))[ scan_data_channel ] // 8-bit channels
+                >> *ignore; // ignore the rest!
+            scan_data_channel =
+                select_p( str_p("DIST1"), str_p("RSSI1"), str_p("DIST2"), str_p("RSSI2") )[ assign_a(ch_idx) ]
+                >> repeat_p(4)[ignore] >> int_p[ var(j) = arg1 ]
+                >> for_p(var(n)=0 , var(n) < var(j) , var(n)++)[ hex_p[ var(chdata)[var(n)] = arg1 / (float)0xFFFF ] ]
+                    [ send_data_a(self.channel_receiver, ch_idx, n, pchdata) ];
 #undef STR2STR
 #undef ENUM
+
+            BOOST_SPIRIT_DEBUG_RULE(full_grammar);
+            BOOST_SPIRIT_DEBUG_RULE(ignore);
+            BOOST_SPIRIT_DEBUG_RULE(str);
+            BOOST_SPIRIT_DEBUG_RULE(bool_1);
+            BOOST_SPIRIT_DEBUG_RULE(bool_0);
+            BOOST_SPIRIT_DEBUG_RULE(ok);
+            BOOST_SPIRIT_DEBUG_RULE(u32);
+            BOOST_SPIRIT_DEBUG_RULE(u8);
+            BOOST_SPIRIT_DEBUG_RULE(i32);
+            BOOST_SPIRIT_DEBUG_RULE(scan_data);
+            BOOST_SPIRIT_DEBUG_RULE(scan_data_channel);
         }
 
         rule<ScannerT> full_grammar,
             ignore, str,
             bool_1, bool_0, ok,
-            u32, u8, i32;
+            u32, u8, i32,
+            scan_data, scan_data_channel;
 
         rule<ScannerT> const& start() const { return full_grammar; }
     };
 };
 
-std::vector<mxx::Atomic> Lms100::parseMsg(const std::string& reply)
+std::vector<mxx::Atomic> Lms100::parseMsg(const std::string& reply,
+        const Lms100::ChannelReceiver& chrecv )
 {
     std::vector< mxx::Atomic > argv;
 
     // FIXME: this should work in tests just as well
     //postMessage("reply %s\n", reply.c_str());
 
-    LmsParser parser(argv);
+    LmsParser parser(argv, chrecv);
 
     parse_info<> info = parse( reply.c_str(), parser, space_p);
 

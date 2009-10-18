@@ -1,10 +1,16 @@
 #include "lms100.hpp"
 
+#include <boost/bind.hpp>
+
+#include <iostream>
+#include <vector>
+#include <map>
+
 // test "adapter"
-std::string parse(const std::string& str)
+std::string parse(const std::string& str, const Lms100::ChannelReceiver& channel_receiver = NULL)
 {
     std::string res = "";
-    std::vector< mxx::Atomic > lst = Lms100::parseMsg(str);
+    std::vector< mxx::Atomic > lst = Lms100::parseMsg(str, channel_receiver);
     std::vector< mxx::Atomic >::iterator it = lst.begin();
     for(; it != lst.end() ; ++it) {
         if (res != "") res += ' ';
@@ -13,10 +19,19 @@ std::string parse(const std::string& str)
     return res;
 }
 
+struct ChannelEater {
+    typedef std::vector<float> chdata_t;
+    typedef std::map<int, chdata_t> channels_t;
+    channels_t chdata;
+    void eat(int chnum, int chsize, const float * data) {
+        std::copy(data, data+chsize, back_inserter(chdata[chnum]));
+    }
+};
+
 #define BOOST_TEST_MODULE Lms100_test
 #include <boost/test/unit_test.hpp>
 
-BOOST_AUTO_TEST_CASE( test_test )
+BOOST_AUTO_TEST_CASE( parser_test )
 {
     BOOST_CHECK_EQUAL( parse("RANDOM NOISE"), "unknown-message RANDOM NOISE");
 
@@ -82,6 +97,33 @@ BOOST_AUTO_TEST_CASE( test_test )
 
     BOOST_CHECK_EQUAL( parse("RA F1 0 FF FF"), "mean-filter 0 255 255");
     BOOST_CHECK_EQUAL( parse("RA F1 1 FF FF"), "mean-filter 1 255 255");
+
+    std::string
+        scan_data =
+        " LMDscandata FFFF FFFF FFFFFFF 0 ignore FFFF FFFF FFFFFFFF FFFFFFFF FFFF FFFF"
+        " ignore ignore ignore"
+        " FFFFFFFF FFFFFFFF 1" // 1 encoder
+        " FFFFFFFF FFFF"
+        " 1" // 1 16-bit channel
+        " DIST1 00000000 00000000 00000000 1000 5" // channel description
+        " 0000 0001 0002 0003 FFFF" // channel data
+        " 0" // 0 8-bit channels
+        " 0" // no position data
+        " 0" // no name
+        " 0" // no comment
+        " 0" // no time info
+        " 0"; // no event info
+
+    char * XX[] = { "RA", "SN" };
+    for(int i = 0; i<2; ++i) {
+        ChannelEater channel_eater;
+        parse(std::string(XX[i]) + scan_data,
+                boost::bind(&ChannelEater::eat, &channel_eater, _1, _2, _3));
+        BOOST_CHECK_EQUAL( channel_eater.chdata.size(), 1 );
+        BOOST_CHECK_EQUAL( channel_eater.chdata[0].size(), 5 );
+        BOOST_CHECK_CLOSE( channel_eater.chdata[0][0], 0.0f, 1e-6f );
+        BOOST_CHECK_CLOSE( channel_eater.chdata[0][4], 1.0f, 1e-6f );
+    }
 }
 
 

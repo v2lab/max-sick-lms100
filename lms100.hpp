@@ -5,9 +5,12 @@
 
 #include <vector>
 #include <string>
+#include <boost/function.hpp>
 
 MXX_CLASS(Lms100)
 {
+    typedef boost::function<void(int,int,const float*)> ChannelReceiver;
+
     static std::string STX, ETX;
 
     int sock;
@@ -28,7 +31,8 @@ MXX_CLASS(Lms100)
 
     void recv();
 
-    static std::vector<mxx::Atomic> parseMsg(const std::string& reply);
+    static std::vector<mxx::Atomic> parseMsg(const std::string& reply,
+            const Lms100::ChannelReceiver& chrecv = NULL);
 
     // SICK data type convertions
     template < typename T > struct SickTraits { static const char * fmt; };
