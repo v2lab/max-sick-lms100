@@ -415,6 +415,7 @@ int main()
             (("connect", connect))
             (("disconnect", disconnect))
             (("send", send))
+            , 5 // n outlets
             );
 
 }

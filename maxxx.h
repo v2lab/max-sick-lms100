@@ -84,12 +84,15 @@ namespace mxx {
         typedef void * (*inlet_reg)(void *, short);
         typedef std::map<int,inlet_reg> inlet_map_t;
 
+        static int n_outlets;
+
         // class scope variables
         static inlet_map_t inlet_map;
         static t_class * _class;
 
         // per object variables
         wrapper_type * wrapper;
+        std::vector<void*> outlets;
 
         // *tors
         base() : wrapper(0) { }
@@ -114,8 +117,9 @@ namespace mxx {
 
 
 
-        static int class_reg_finally()
+        static int class_reg_finally(int outlets=0)
         {
+            n_outlets = outlets;
             return class_register( NS==BOX ? CLASS_BOX : CLASS_NOBOX, _class );
         }
 
@@ -153,6 +157,10 @@ namespace mxx {
                 (*it).second(&wrapper->ob, (*it).first);
             }
 
+            for(int i=0; i<n_outlets; i++) {
+                outlets.push_back( outlet_new(&wrapper->ob, NULL) );
+            }
+
             setup(argc, argv);
         }
 
@@ -185,6 +193,7 @@ namespace mxx {
     };
     template<class T, mxx::namespace_t NS> t_class * base<T,NS>::_class = 0;
     template<class T, mxx::namespace_t NS> typename base<T,NS>::inlet_map_t base<T,NS>::inlet_map;
+    template<class T, mxx::namespace_t NS> int base<T,NS>::n_outlets = 0;
 
     /*
      * IMPORTANT: this one should remain C-struct compatible: can't have virtuals...
@@ -232,10 +241,10 @@ template< class T > struct param_type< T& > {
         BOOST_PP_TUPLE_ELEM(2,0, name_meth) \
         , & c :: BOOST_PP_TUPLE_ELEM(2,1, name_meth));
 
-#define MXX_REGISTER_CLASS( C, C_NAME, MS) \
-    C ::class_reg(C_NAME); \
-    BOOST_PP_SEQ_FOR_EACH(MXX_METH_MACRO, C, MS) \
-    C ::class_reg_finally();
+#define MXX_REGISTER_CLASS( CLASS, CLASS_NAME, METHODS, ...) \
+    CLASS ::class_reg(CLASS_NAME); \
+    BOOST_PP_SEQ_FOR_EACH(MXX_METH_MACRO, CLASS, METHODS) \
+    CLASS ::class_reg_finally(__VA_ARGS__);
 
 #define MXX_CLASS(name) struct name : mxx::base<name>
 #define MXX_NOBOX_CLASS(name) struct name : mxx::base<name,mxx::NOBOX>
