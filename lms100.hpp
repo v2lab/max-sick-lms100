@@ -30,6 +30,7 @@ MXX_CLASS(Lms100)
     void send(const char * _send_, long argc, t_atom * argv);
 
     void recv();
+    void sendChannelData(int ch_idx, int data_size, const float * data);
 
     static std::vector<mxx::Atomic> parseMsg(const std::string& reply,
             const Lms100::ChannelReceiver& chrecv = NULL);

@@ -20,6 +20,7 @@
 #include <boost/spirit/include/classic_select.hpp>
 #include <boost/spirit/include/phoenix1_functions.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/bind.hpp>
 using namespace boost::assign;
 
 #include <iostream>
@@ -174,7 +175,7 @@ void Lms100::recv()
         int parsed = 0;
         while(i != end) {
             std::string reply( *i++ );
-            parseMsg(reply);
+            parseMsg(reply, boost::bind(&Lms100::sendChannelData, this, _1, _2, _3));
             parsed += STX.length() + reply.length() + ETX.length();
         }
         recvLeftover = recvLeftover.substr(parsed);
@@ -183,6 +184,10 @@ void Lms100::recv()
 
     // continue polling
     qelem_set(recvQueue);
+}
+
+void Lms100::sendChannelData(int ch_idx, int data_size, const float * data)
+{
 }
 
 struct push_back_ok_a {
