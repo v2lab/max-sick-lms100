@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE( parser_test )
         " FFFFFFFF FFFF"
         " 1" // 1 16-bit channel
         " DIST1 00000000 00000000 00000000 1000 5" // channel description
-        " 0000 0001 0002 0003 FFFF" // channel data
+        " 0000 0001 8000 0003 FFFF" // channel data
         " 0" // 0 8-bit channels
         " 0" // no position data
         " 0" // no name
@@ -122,6 +122,7 @@ BOOST_AUTO_TEST_CASE( parser_test )
         BOOST_CHECK_EQUAL( channel_eater.chdata.size(), 1 );
         BOOST_CHECK_EQUAL( channel_eater.chdata[0].size(), 5 );
         BOOST_CHECK_CLOSE( channel_eater.chdata[0][0], 0.0f, 1e-6f );
+        BOOST_CHECK_CLOSE( channel_eater.chdata[0][2], 0.5f, 1e-2f );
         BOOST_CHECK_CLOSE( channel_eater.chdata[0][4], 1.0f, 1e-6f );
     }
 }

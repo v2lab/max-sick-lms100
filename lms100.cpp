@@ -14,6 +14,7 @@
 #define BOOST_SPIRIT_SELECT_LIMIT 6
 #include <boost/spirit/include/classic_core.hpp>
 #include <boost/spirit/include/classic_push_back_actor.hpp>
+#include <boost/spirit/include/classic_clear_actor.hpp>
 #include <boost/spirit/include/classic_loops.hpp>
 #include <boost/spirit/include/classic_attribute.hpp>
 #include <boost/spirit/include/classic_for.hpp>
@@ -207,13 +208,16 @@ void Lms100::recv()
 
         recvLeftover += std::string(buffer,write_pos);
 
-        const boost::regex sick_re(STX + "(.*)" + ETX);
+        // non-greedy kleene star - otherwise consequtive messages will be joined at heap.
+        const boost::regex sick_re(STX + "(.*?)" + ETX);
         boost::sregex_token_iterator end, i(recvLeftover.begin(), recvLeftover.end(), sick_re, 1);
 
         int parsed = 0;
         while(i != end) {
             std::string reply( *i++ );
-            parseMsg(reply, boost::bind(&Lms100::sendChannelData, this, _1, _2, _3));
+            std::vector<mxx::Atomic> to_spit = parseMsg(reply, boost::bind(&Lms100::sendChannelData, this, _1, _2, _3));
+            if (to_spit.size()>0)
+                outlet(4, to_spit);
             parsed += STX.length() + reply.length() + ETX.length();
         }
         recvLeftover = recvLeftover.substr(parsed);
@@ -226,6 +230,10 @@ void Lms100::recv()
 
 void Lms100::sendChannelData(int ch_idx, int data_size, const float * data)
 {
+    if (ch_idx >= 4) {
+        postError("internal: channel index out of range!");
+        return;
+    }
     outlet(ch_idx,data_size,data);
 }
 
@@ -334,7 +342,7 @@ void Lms100::bang()
 
 void Lms100::scan(long on)
 {
-    SEND("RN", "LMDscandata", on);
+    SEND("EN", "LMDscandata", on);
 }
 
 typedef std::map<int, std::string> Enum;
@@ -422,11 +430,11 @@ struct LmsParser : public grammar<LmsParser>
                 >> int_p[ var(i) = arg1 ] >> repeat_p(boost::ref(i))[ ignore >> ignore ] // encoders
                 >> int_p[ var(i) = arg1 ] >> repeat_p(boost::ref(i))[ scan_data_channel ] // 16-bit channels
                 >> int_p[ var(i) = arg1 ] >> repeat_p(boost::ref(i))[ scan_data_channel ] // 8-bit channels
-                >> *ignore; // ignore the rest!
+                >> *ignore [ clear_a(self.vec) ]; // ignore the rest!
             scan_data_channel =
                 select_p( str_p("DIST1"), str_p("RSSI1"), str_p("DIST2"), str_p("RSSI2") )[ assign_a(ch_idx) ]
-                >> repeat_p(4)[ignore] >> int_p[ var(j) = arg1 ]
-                >> for_p(var(n)=0 , var(n) < var(j) , var(n)++)[ hex_p[ var(chdata)[var(n)] = arg1 / (float)0xFFFF ] ]
+                >> repeat_p(4)[ignore] >> hex_p[ var(j) = arg1 ]
+                >> for_p(var(n)=0 , var(n) < var(j) , var(n)++)[ hex_p[ var(chdata)[var(n)] = arg1 ] [ var(chdata)[var(n)] /= (float)0xFFFF ] ]
                     [ send_data_a(self.channel_receiver, ch_idx, n, pchdata) ];
 #undef STR2STR
 #undef ENUM

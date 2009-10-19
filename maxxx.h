@@ -13,6 +13,7 @@
 #include <string>
 #include <map>
 #include <ostream>
+#include <deque>
 
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
@@ -105,7 +106,7 @@ namespace mxx {
 
         // per object variables
         wrapper_type * wrapper;
-        std::vector<void*> outlets;
+        std::deque<void*> outlets;
 
         // *tors
         base() : wrapper(0) { }
@@ -171,7 +172,7 @@ namespace mxx {
             }
 
             for(int i=0; i<n_outlets; i++) {
-                outlets.push_back( outlet_new(&wrapper->ob, NULL) );
+                outlets.push_front( outlet_new(&wrapper->ob, NULL) );
             }
 
             setup(argc, argv);
