@@ -22,7 +22,7 @@ MXX_CLASS(Lms100)
 
     void setup(long argc, t_atom * argv)
     {
-        recvQueue = qelem_new(&(wrapper->ob), (method)MEM_FUN_WRAP(&Lms100::recv) );
+        recvQueue = qelem_new(&(wrapper->ob), (method)METHOD_ADAPTOR(&Lms100::recv) );
     }
 
     void connect( const char * _connect_, long argc, t_atom * argv );

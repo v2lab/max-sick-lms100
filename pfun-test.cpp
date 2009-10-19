@@ -137,6 +137,7 @@ template< typename T > struct type_tag< T & > { const static FFI_TYPE value = FF
 #define REGISTER_CALLBACK_RETURN_TYPE int
 
 #include "auto_reg_cb.hpp"
+using wrap::auto_reg;
 // ---------------------------------------------------------------------------
 // a test c++ object whose methods we want to use as callbacks
 // ---------------------------------------------------------------------------
@@ -156,11 +157,13 @@ struct Counter {
 // ---------------------------------------------------------------------------
 // method to function pointer convertor
 // ---------------------------------------------------------------------------
-#include "mem_fn_wrap.hpp"
+#include "method_adaptor.hpp"
 
-PARAM_CONVERSION(short, int, arg)
-{ return (arg<INT16_MAX)?arg:INT16_MAX; }
+namespace wrap {
 
+PARAM_CONVERSION(short, int, arg) { return (arg<INT16_MAX)?arg:INT16_MAX; }
+
+}
 
 // ---------------------------------------------------------------------------
 // tests
@@ -205,13 +208,13 @@ int test_main( int, char *[] )             // note the name!
     BOOST_CHECK( call_back(3, 1 , 1.5, "%d, %f\n") == 0 );
 
 
-    /* start over. test MEM_FUN_WRAP. */
+    /* start over. test METHOD_ADAPTOR. */
     reset_registry();
     Counter cntr;
-    BOOST_CHECK(auto_reg( MEM_FUN_WRAP(&Counter::get)) == 0);
-    BOOST_CHECK(auto_reg( MEM_FUN_WRAP(&Counter::step)) == 1);
-    BOOST_CHECK(auto_reg( MEM_FUN_WRAP(&Counter::reset)) == 2);
-    BOOST_CHECK(auto_reg( MEM_FUN_WRAP(&Counter::set)) == 3);
+    BOOST_CHECK(auto_reg( METHOD_ADAPTOR(&Counter::get)) == 0);
+    BOOST_CHECK(auto_reg( METHOD_ADAPTOR(&Counter::step)) == 1);
+    BOOST_CHECK(auto_reg( METHOD_ADAPTOR(&Counter::reset)) == 2);
+    BOOST_CHECK(auto_reg( METHOD_ADAPTOR(&Counter::set)) == 3);
 
     BOOST_CHECK(call_back(0,&cntr) == 0);
     BOOST_CHECK(call_back(1,&cntr) == 1);
@@ -226,10 +229,10 @@ int test_main( int, char *[] )             // note the name!
     /* start over. test type conversion. */
     reset_registry();
     cntr.reset();
-    BOOST_CHECK(auto_reg( MEM_FUN_WRAP(&Counter::get)) == 0);
-    BOOST_CHECK(auto_reg( MEM_FUN_WRAP(&Counter::step)) == 1);
-    BOOST_CHECK(auto_reg( MEM_FUN_WRAP(&Counter::reset)) == 2);
-    BOOST_CHECK(auto_reg( MEM_FUN_WRAP(&Counter::set2)) == 3);
+    BOOST_CHECK(auto_reg( METHOD_ADAPTOR(&Counter::get)) == 0);
+    BOOST_CHECK(auto_reg( METHOD_ADAPTOR(&Counter::step)) == 1);
+    BOOST_CHECK(auto_reg( METHOD_ADAPTOR(&Counter::reset)) == 2);
+    BOOST_CHECK(auto_reg( METHOD_ADAPTOR(&Counter::set2)) == 3);
 
     BOOST_CHECK(call_back(3,&cntr,INT32_MAX) == INT16_MAX);
 

@@ -22,7 +22,7 @@ using boost::bad_lexical_cast;
 
 #include <boost/variant.hpp>
 
-#include "mem_fn_wrap.hpp"
+#include "method_adaptor.hpp"
 
 namespace mxx {
     using boost::variant;
@@ -61,8 +61,12 @@ namespace mxx {
 }
 
 /* types supported via conversions */
+namespace wrap {
+
 PARAM_CONVERSION(float, double, d) { return (float)d; }
 PARAM_CONVERSION(const char *, t_symbol *, sym) { return sym->s_name; }
+
+} // namespace wrap
 
 // setup automatic registration stuff
 #include <boost/preprocessor.hpp>
@@ -75,6 +79,9 @@ PARAM_CONVERSION(const char *, t_symbol *, sym) { return sym->s_name; }
 #define REGISTER_CALLBACK_EXTRA_ARG_TYPES (t_class*)(char*)
 
 #include "auto_reg_cb.hpp"
+using wrap::auto_reg;
+
+namespace wrap {
 
 // special treatment of gimmes:
 template< typename WRAPPER >
@@ -85,6 +92,8 @@ struct auto_regger< void(*)(WRAPPER*, t_symbol *, long, t_atom*), 4 > {
         class_addmethod(_class, (method) cb, _name, A_GIMME, 0);
     }
 };
+
+} // namespace wrap
 
 namespace mxx {
 
@@ -161,7 +170,7 @@ namespace mxx {
                     }
                 }
             }
-#define method_reg(name, fun) method_reg0(name, MEM_FUN_WRAP(fun))
+#define method_reg(name, fun) method_reg0(name, METHOD_ADAPTOR(fun))
 
         void setup( wrapper_type * _w, long argc, t_atom * argv ) {
             wrapper = _w;
@@ -284,10 +293,14 @@ namespace mxx {
 }
 
 /* make sure wrapper passes the right 'this' to member functions */
+namespace wrap {
+
 template< class T > struct param_type< T& > {
     typedef mxx::wrapper<T> * type;
     static T& convert_param(type w) { return *(w->wrappee); }
 };
+
+} // namespace wrap
 
 
 #define MXX_METH_MACRO(r, c, name_meth) c ::method_reg( \

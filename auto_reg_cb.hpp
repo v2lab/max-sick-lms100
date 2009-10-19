@@ -1,3 +1,18 @@
+/*
+ * Callback registration generator.
+ *
+ * The problem:
+ *
+ * - some old-school callback system requires to describe callback argument
+ *   types, but we've just described them to the compiler, let it generate the
+ *   metadata.
+ *
+ * User will have to specify transformation rules from compile type function
+ * signature components to run time callback registration arguments. We also
+ * allow user to supply some boilerplate code by defining some preprocessor
+ * macros.
+ */
+
 #ifndef BOOST_PP_IS_ITERATING
 
 #ifndef auto_reg_cb_hpp
@@ -11,6 +26,8 @@
 #include <boost/mpl/deref.hpp>
 
 #include <boost/preprocessor.hpp>
+
+namespace wrap {
 
 namespace ft = boost::function_types;
 namespace mpl = boost::mpl;
@@ -59,6 +76,8 @@ reg_return_type auto_reg(Function f REG_EXTRA_ARG_TYPED)
 #define  BOOST_PP_FILENAME_1 "auto_reg_cb.hpp"
 #define  BOOST_PP_ITERATION_LIMITS (0,BOOST_FT_MAX_ARITY)
 #include BOOST_PP_ITERATE()
+
+} // namespace wrap
 
 #endif
 

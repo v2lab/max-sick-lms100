@@ -1,18 +1,23 @@
 /*
  * Member function pointer to C-compatible function pointer conversion.
  *
- * This code is based on fast_mem_fn example from boost::function_types
- * library, main difference is that instead of generating a callable object
- * these templates generate a static member function, which can be passed to
- * some C callback registration APIs. This cancels the original call speed
- * optimization of the example, hence the removal of the word "fast" from the
- * code :-)
+ * The problem:
+ *
+ * - we want to register a member function to be called by C-based callback
+ *   system, with 'this' pointer preserved in a callback registration mechanism.
+ *
+ * - we might also want to have function arguments be converted from callback
+ *   system's wrapped values to C/C++ types.
+ *
+ * To do that I use the thechnique similar the one found in fast_mem_fn example
+ * from boost::function_types library. The idea is to figure out member function
+ * signature, transform it into a C-compatible function signature and generate a
+ * wrapper with that signature.
  */
-
 #ifndef BOOST_PP_IS_ITERATING
 
-#ifndef mem_fn_wrap_hpp
-#define mem_fn_wrap_hpp
+#ifndef method_adaptor_hpp
+#define method_adaptor_hpp
 
 #include <boost/function_types/result_type.hpp>
 #include <boost/function_types/function_arity.hpp>
@@ -32,6 +37,8 @@
 #include <boost/mpl/begin.hpp>
 #include <boost/mpl/next.hpp>
 #include <boost/mpl/deref.hpp>
+
+namespace wrap {
 
 namespace ft = boost::function_types;
 namespace mpl = boost::mpl;
@@ -67,9 +74,7 @@ namespace detail
 /**********************************************************************************/
 
 /*
- * This is amazing bit I couldn't figure out myself for three days, imagine
- * how happy I was when I discovered that someone did it. Here is a bit of
- * original documentation:
+ * Borrowed technique. A bit of original documentation:
  *
  *   Finally we provide a macro that does have similar semantics to the
  *   function template mem_fn of the Bind library.
@@ -80,13 +85,13 @@ namespace detail
  *   non-type template argument, which is passed in in a second step. The
  *   macro hides this lengthy expression from the user.
  */
-#define MEM_FUN_WRAP(mfp) make_mem_fn_wrap(mfp).make_mem_fn_wrap<mfp>()
+#define METHOD_ADAPTOR(mfp) wrap::make_method_adaptor(mfp).make_method_adaptor<mfp>()
 
 template< typename MFPT, MFPT MemberFunction , size_t Arity = ft::function_arity<MFPT>::value >
-struct mem_fn_wrap;
+struct method_adaptor;
 
 template<typename MFPT>
-struct mem_fn_wrap_maker
+struct method_adaptor_maker
 {
     typedef typename mpl::push_front<
         detail::parameter_types<MFPT>,
@@ -95,18 +100,18 @@ struct mem_fn_wrap_maker
 
     template<MFPT Callee>
     typename ft::function_pointer< wrapper_sig >::type
-    make_mem_fn_wrap()
+    make_method_adaptor()
     {
-        return mem_fn_wrap<MFPT,Callee>::call;
+        return method_adaptor<MFPT,Callee>::call;
     }
 };
 
 template<typename MFPT>
 typename boost::enable_if<boost::is_member_function_pointer<MFPT>,
-    mem_fn_wrap_maker<MFPT> >::type
-make_mem_fn_wrap(MFPT)
+    method_adaptor_maker<MFPT> >::type
+make_method_adaptor(MFPT)
 {
-    return mem_fn_wrap_maker<MFPT>();
+    return method_adaptor_maker<MFPT>();
 }
 
 /**********************************************************************************/
@@ -119,9 +124,11 @@ make_mem_fn_wrap(MFPT)
 #include <boost/preprocessor/repetition/enum_shifted.hpp>
 #include <boost/preprocessor/repetition/enum_binary_params.hpp>
 
-#define  BOOST_PP_FILENAME_1 "mem_fn_wrap.hpp"
+#define  BOOST_PP_FILENAME_1 "method_adaptor.hpp"
 #define  BOOST_PP_ITERATION_LIMITS (1,BOOST_FT_MAX_ARITY)
 #include BOOST_PP_ITERATE()
+
+} // namespace wrap
 
 /**********************************************************************************/
 #endif
@@ -130,8 +137,9 @@ make_mem_fn_wrap(MFPT)
 /* repetition body */
 
 #define N BOOST_PP_FRAME_ITERATION(1)
+
 template< typename MFPT, MFPT MemberFunction >
-struct mem_fn_wrap<MFPT, MemberFunction, N >
+struct method_adaptor<MFPT, MemberFunction, N >
 {
     // decompose the result and the parameter types (public for introspection)
     typedef typename ft::result_type<MFPT>::type result_type;
@@ -156,6 +164,7 @@ public:
 #undef CONV
     };
 };
+
 #undef N
 
 /**********************************************************************************/
