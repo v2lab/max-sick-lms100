@@ -38,6 +38,14 @@
 #include <boost/mpl/next.hpp>
 #include <boost/mpl/deref.hpp>
 
+#ifndef METHOD_ADAPTOR_PRE
+#define METHOD_ADAPTOR_PRE()
+#endif
+
+#ifndef METHOD_ADAPTOR_POST
+#define METHOD_ADAPTOR_POST()
+#endif
+
 namespace wrap {
 
 namespace ft = boost::function_types;
@@ -159,9 +167,13 @@ public:
     static result_type call(
             BOOST_PP_ENUM_BINARY_PARAMS(N, typename mpl::deref<i,>::type a) )
     {
+        METHOD_ADAPTOR_PRE()
+
 #define CONV(z,i,data)  param_type< typename mpl::deref< BOOST_PP_CAT(t,i) >::type >::convert_param( BOOST_PP_CAT(a,i) )
         return (param_type< typename mpl::deref< t0 >::type >::convert_param(a0).*MemberFunction)(BOOST_PP_ENUM_SHIFTED(N,CONV,~));
 #undef CONV
+
+        METHOD_ADAPTOR_POST()
     };
 };
 

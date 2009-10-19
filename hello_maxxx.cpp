@@ -31,6 +31,10 @@ MXX_CLASS(Hello) {
         std::vector< mxx::Atomic > printme = list_of(mxx::Atomic("hello"))(mxx::Atomic("goodby"));
         outlet(0,printme);
     }
+
+    void test_error() {
+        throw "Shit happens";
+    }
 };
 
 int main()
@@ -48,6 +52,7 @@ int main()
             (("ft2", float_inlet2))
             (("in2", int_inlet1))
             (("test_output", test_output))
+            (("test_error", test_error))
             , 1 // outlet
             );
 }

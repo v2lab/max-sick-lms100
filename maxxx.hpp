@@ -19,6 +19,10 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/variant.hpp>
 
+#define METHOD_ADAPTOR_PRE() try {
+#define METHOD_ADAPTOR_POST() } catch(...) { \
+    error("internal error: unhandled exception\n"); \
+}
 #include "method_adaptor.hpp"
 
 namespace mxx {
