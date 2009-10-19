@@ -25,7 +25,7 @@ using namespace boost::assign;
 
 #include <iostream>
 
-template<> const char * Lms100::SickTraits< long >::fmt = "%lx";
+template<> const char * Lms100::SickTraits< long >::fmt = "%lX";
 template<> const char * Lms100::SickTraits< float >::fmt = "%f";
 template <> std::string Lms100::sickFormat(char * val) { return val; }
 template <> std::string Lms100::sickFormat(t_atom * atom)
@@ -305,6 +305,28 @@ struct send_data_a {
     }
 };
 
+void Lms100::set_scan_cfg(long mode)
+{
+    long
+        a = ((mode==2) ? 5000 : 2500),
+        b = ((mode==0) ? 2500 : 5000);
+
+    set_access_mode(3);
+    SEND("MN", "mLMPsetscan", a, "1", b, "FFF92230", "225510");
+
+    set_access_mode(0);
+}
+
+void Lms100::set_access_mode(long mode)
+{
+    if (mode == 0) {
+        SEND("MN", "Run");
+    } else if (mode < 4) {
+        const char * pass = (mode==3)?"F4724744":"B21ACE26";
+        SEND("MN", "SetAccessMode", mode, pass);
+    }
+}
+
 typedef std::map<int, std::string> Enum;
 Enum access_mode_map = map_list_of
     (0,"run")
@@ -455,6 +477,8 @@ int main()
             (("disconnect", disconnect))
             (("send", send_meth))
             (("display", display))
+            (("set-scan-cfg", set_scan_cfg))
+            (("set-access-mode", set_access_mode))
             , 5 // n outlets
             );
 

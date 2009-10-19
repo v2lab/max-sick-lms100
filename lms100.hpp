@@ -29,6 +29,8 @@ MXX_CLASS(Lms100)
     void disconnect();
     void send_meth(const char * _send_, long argc, t_atom * argv);
     void display(long mask);
+    void set_scan_cfg(long mode);
+    void set_access_mode(long mode);
 
     void recv();
     void sendChannelData(int ch_idx, int data_size, const float * data);
