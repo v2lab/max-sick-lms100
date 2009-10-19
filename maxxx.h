@@ -22,7 +22,7 @@ using boost::bad_lexical_cast;
 
 #include <boost/variant.hpp>
 
-#include "pfun/mem_fn_wrap.hpp"
+#include "mem_fn_wrap.hpp"
 
 namespace mxx {
     using boost::variant;
@@ -74,7 +74,7 @@ PARAM_CONVERSION(const char *, t_symbol *, sym) { return sym->s_name; }
     , 0);
 #define REGISTER_CALLBACK_EXTRA_ARG_TYPES (t_class*)(char*)
 
-#include "pfun/auto_reg_cb.hpp"
+#include "auto_reg_cb.hpp"
 
 // special treatment of gimmes:
 template< typename WRAPPER >

@@ -1,16 +1,8 @@
 *.P
 *.d
 *.o
-/tcpclient
-/SICK-stream*
-/SICK*.log
-/BlobServer
 /LMS*.pdf
 /.vimrc
 /*.mxo
-*.pcap
-/messlog
-/messlog.log
 /build
-/pfun
 /v2_cmake
