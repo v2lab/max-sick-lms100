@@ -1,5 +1,5 @@
-#ifndef maxxx_h
-#define maxxx_h
+#ifndef maxxx_hpp
+#define maxxx_hpp
 
 // FIXME osx specific
 #include <Carbon/Carbon.h>
@@ -17,14 +17,13 @@
 
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
-using boost::lexical_cast;
-using boost::bad_lexical_cast;
-
 #include <boost/variant.hpp>
 
 #include "method_adaptor.hpp"
 
 namespace mxx {
+    using boost::lexical_cast;
+    using boost::bad_lexical_cast;
     using boost::variant;
 
     template< typename T > struct type_tag;
@@ -79,7 +78,6 @@ PARAM_CONVERSION(const char *, t_symbol *, sym) { return sym->s_name; }
 #define REGISTER_CALLBACK_EXTRA_ARG_TYPES (t_class*)(char*)
 
 #include "auto_reg_cb.hpp"
-using wrap::auto_reg;
 
 namespace wrap {
 
@@ -149,7 +147,7 @@ namespace mxx {
         template < typename F >
             static void method_reg0(char * name, F fun)
             {
-                auto_reg(fun, _class, name);
+                wrap::auto_reg(fun, _class, name);
 
                 /* if this is a special inletly name - remember the inlet */
                 const boost::regex inlet_re("(in|ft)(\\d+)");

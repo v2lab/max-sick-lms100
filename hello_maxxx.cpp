@@ -1,4 +1,4 @@
-#include "maxxx.h"
+#include "maxxx.hpp"
 
 #include <vector>
 #include <boost/assign/list_of.hpp>

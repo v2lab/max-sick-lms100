@@ -1,10 +1,13 @@
 #include "lms100.hpp"
 
+#include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
 
 #include <iostream>
 #include <vector>
 #include <map>
+
+using boost::lexical_cast;
 
 // test "adapter"
 std::string parse(const std::string& str, const Lms100::ChannelReceiver& channel_receiver = NULL)

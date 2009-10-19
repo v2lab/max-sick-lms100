@@ -22,9 +22,12 @@
 #include <boost/spirit/include/phoenix1_functions.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
-using namespace boost::assign;
+#include <boost/lexical_cast.hpp>
 
 #include <iostream>
+
+using namespace boost::assign;
+using boost::lexical_cast;
 
 template<> const char * Lms100::SickTraits< long >::fmt = "%lX";
 template<> const char * Lms100::SickTraits< float >::fmt = "%f";

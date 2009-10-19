@@ -1,7 +1,7 @@
 #ifndef lms100_hpp
 #define lms100_hpp
 
-#include "maxxx.h"
+#include "maxxx.hpp"
 
 #include <vector>
 #include <string>
