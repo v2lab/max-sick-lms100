@@ -188,6 +188,7 @@ void Lms100::recv()
 
 void Lms100::sendChannelData(int ch_idx, int data_size, const float * data)
 {
+    outlet(ch_idx,data_size,data);
 }
 
 struct push_back_ok_a {

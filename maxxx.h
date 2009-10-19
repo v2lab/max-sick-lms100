@@ -190,6 +190,32 @@ namespace mxx {
             }
         }
 
+        template < typename Container >
+        void outlet(int i, const std::string& sym, Container argv)
+        {
+            if ( i < outlets.size() ) {
+                int n = argv.size();
+                t_atom symsym = to_atom(sym);
+                t_atom array[n];
+                std::transform(argv.begin(), argv.end(), array, &mxx::to_atom<mxx::Atomic>);
+                outlet_anything( outlets[i], &symsym, n, array);
+            } else {
+                postError("otlet index out of range");
+            }
+        }
+
+        void outlet(int i, int n, const float* data)
+        {
+            if (i>= outlets.size()) {
+                postError("otlet index out of range");
+                return;
+            }
+
+            t_atom array[n];
+            atom_setfloat_array(n,array,n,const_cast<float*>(data));
+            outlet_list( outlets[i], NULL, n, array);
+        }
+
         virtual void setup(long argc, t_atom * argv)
         {
         }
