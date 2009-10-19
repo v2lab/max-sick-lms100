@@ -40,7 +40,7 @@ template <> std::string Lms100::sickFormat(t_atom * atom)
 }
 std::string Lms100::STX = "\x2s", Lms100::ETX = "\x3";
 
-void Lms100::connect( const char * _send_, long argc, t_atom * argv )
+void Lms100::connect( const char * _connect_, long argc, t_atom * argv )
 {
     std::string host_str = "192.168.0.1";
     long port = 2112;
@@ -105,14 +105,13 @@ void Lms100::disconnect()
     }
 }
 
-void Lms100::send(const char * _send_, long argc, t_atom * argv)
+void Lms100::send_meth(const char * _send_, long argc, t_atom * argv)
 {
-    std::string buffer = STX;
 
-    if (sock < 0) {
-        postError("can't send, connect first");
-        return;
-    }
+    /*
+     * FIXME: refactor via send
+     */
+    std::string buffer = STX;
 
     int i;
     for (i = 0; i < argc; i++) {
@@ -122,6 +121,12 @@ void Lms100::send(const char * _send_, long argc, t_atom * argv)
 
     buffer += ETX;
 
+    if (sock < 0) {
+        postError("can't send, connect first");
+        postMessage("would have sent '%s'", buffer.c_str());
+        return;
+    }
+
     // FIXME may return -1 (errno==EAGAIN) if send would block
     if (::send(sock, buffer.c_str(), buffer.length(), 0) != buffer.length()) {
         postError("something's wrong, sent less bytes then expected");
@@ -129,6 +134,40 @@ void Lms100::send(const char * _send_, long argc, t_atom * argv)
     } else {
         postMessage("sent '%s'", buffer.c_str());
     }
+}
+
+void Lms100::send( const std::vector< mxx::Atomic >& argv )
+{
+    std::string buffer = STX;
+
+    int argc = argv.size(), i;
+    for (i = 0; i < argc; i++) {
+        t_atom a = mxx::to_atom(argv[i]);
+        buffer += sickFormat(&a);
+        if (i<(argc-1)) buffer += ' ';
+    }
+
+    buffer += ETX;
+
+    if (sock < 0) {
+        postError("can't send, connect first");
+        postMessage("would have sent '%s'", buffer.c_str());
+        return;
+    }
+
+    // FIXME may return -1 (errno==EAGAIN) if send would block
+    if (::send(sock, buffer.c_str(), buffer.length(), 0) != buffer.length()) {
+        postError("something's wrong, sent less bytes then expected");
+        postOSError();
+    } else {
+        postMessage("sent '%s'", buffer.c_str());
+    }
+}
+
+void Lms100::display(long mask)
+{
+    std::vector< mxx::Atomic > argv = list_of(mxx::Atomic("MN"))("mLMLSetDisp")(mask);
+    send(argv);
 }
 
 void Lms100::recv()
@@ -415,7 +454,8 @@ int main()
             Lms100, "lms100",
             (("connect", connect))
             (("disconnect", disconnect))
-            (("send", send))
+            (("send", send_meth))
+            (("display", display))
             , 5 // n outlets
             );
 

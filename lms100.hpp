@@ -25,12 +25,14 @@ MXX_CLASS(Lms100)
         recvQueue = qelem_new(&(wrapper->ob), (method)MEM_FUN_WRAP(&Lms100::recv) );
     }
 
-    void connect( const char * _send_, long argc, t_atom * argv );
+    void connect( const char * _connect_, long argc, t_atom * argv );
     void disconnect();
-    void send(const char * _send_, long argc, t_atom * argv);
+    void send_meth(const char * _send_, long argc, t_atom * argv);
+    void display(long mask);
 
     void recv();
     void sendChannelData(int ch_idx, int data_size, const float * data);
+    void send( const std::vector< mxx::Atomic >& argv );
 
     static std::vector<mxx::Atomic> parseMsg(const std::string& reply,
             const Lms100::ChannelReceiver& chrecv = NULL);
