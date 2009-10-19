@@ -136,7 +136,7 @@ void Lms100::send_meth(const char * _send_, long argc, t_atom * argv)
     }
 }
 
-void Lms100::send( const std::vector< mxx::Atomic >& argv )
+void Lms100::send_impl( const std::vector< mxx::Atomic >& argv )
 {
     std::string buffer = STX;
 
@@ -166,8 +166,7 @@ void Lms100::send( const std::vector< mxx::Atomic >& argv )
 
 void Lms100::display(long mask)
 {
-    std::vector< mxx::Atomic > argv = list_of(mxx::Atomic("MN"))("mLMLSetDisp")(mask);
-    send(argv);
+    SEND("MN","mLMLSetDisp",mask);
 }
 
 void Lms100::recv()
