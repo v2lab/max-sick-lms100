@@ -325,6 +325,16 @@ void Lms100::set_scan_cfg(long mode)
     set_access_mode(0);
 }
 
+void Lms100::set_mean_filter(long mode)
+{
+    set_access_mode(3);
+    if ((mode == 0) || (mode == 1))
+        SEND("WI", "F1", 0l, 2l, 0l);
+    else
+        SEND("WI", "F1", 1l, mode, 0l);
+    set_access_mode(0);
+}
+
 void Lms100::set_access_mode(long mode)
 {
     if (mode == 0) {
@@ -497,6 +507,7 @@ int main()
             (("display", display))
             (("set-scan-cfg", set_scan_cfg))
             (("set-access-mode", set_access_mode))
+            (("set-mean-filter", set_mean_filter))
             (("bang", bang))
             (("scan", scan))
             , 5 // n outlets
