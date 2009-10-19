@@ -500,7 +500,7 @@ std::vector<mxx::Atomic> Lms100::parseMsg(const std::string& reply,
 int main()
 {
     MXX_REGISTER_CLASS(
-            Lms100, "lms100",
+            Lms100, "v2_max.sick.lms100",
             (("connect", connect))
             (("disconnect", disconnect))
             (("send", send_meth))
