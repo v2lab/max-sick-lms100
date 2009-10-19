@@ -43,7 +43,20 @@ namespace mxx {
         NOBOX,
     };
 
-    typedef variant< long, double, std::string > Atomic;
+    typedef variant< long, float, std::string > Atomic;
+
+    template< typename TYPE > static inline t_atom to_atom( const TYPE& );
+    template<> static inline t_atom to_atom<long>( const long& i ) { t_atom a; atom_setlong(&a, i); return a; }
+    template<> static inline t_atom to_atom<float>( const float& f ) { t_atom a; atom_setfloat(&a, f); return a; }
+    template<> static inline t_atom to_atom<std::string>( const std::string& s )
+    { t_atom a; atom_setsym( &a, gensym( const_cast<char*>(s.c_str()) )); return a; }
+
+    struct to_atom_visitor : boost::static_visitor< t_atom > {
+        template< typename TYPE > t_atom operator()( TYPE arg ) const { return to_atom(arg); }
+    };
+
+    template<> static inline t_atom to_atom<Atomic>(const Atomic& val)
+    { return boost::apply_visitor( to_atom_visitor(), val ); }
 }
 
 /* types supported via conversions */
@@ -162,6 +175,19 @@ namespace mxx {
             }
 
             setup(argc, argv);
+        }
+
+        template < typename Container >
+        void outlet(int i, Container argv)
+        {
+            if ( i < outlets.size() ) {
+                int n = argv.size();
+                t_atom array[n];
+                std::transform(argv.begin(), argv.end(), array, &mxx::to_atom<mxx::Atomic>);
+                outlet_anything( outlets[i], atom_getsym(array+0), n-1, array+1);
+            } else {
+                postError("otlet index out of range");
+            }
         }
 
         virtual void setup(long argc, t_atom * argv)

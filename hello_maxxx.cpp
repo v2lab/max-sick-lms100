@@ -1,5 +1,9 @@
 #include "maxxx.h"
 
+#include <vector>
+#include <boost/assign/list_of.hpp>
+using namespace boost::assign;
+
 MXX_CLASS(Hello) {
     char * name;
 
@@ -22,6 +26,11 @@ MXX_CLASS(Hello) {
     { post("tested %d, %f, %s\n", i, f, s); }
     void int_inlet1(long i) { post("received %d in a second inlet\n", i); }
     void float_inlet2(float f) { post("received %f in a third inlet\n", f); }
+
+    void test_output() {
+        std::vector< mxx::Atomic > printme = list_of(mxx::Atomic("hello"))(mxx::Atomic("goodby"));
+        outlet(0,printme);
+    }
 };
 
 int main()
@@ -37,6 +46,9 @@ int main()
             (("in1", int_inlet1))
             (("ft1", float_inlet2))
             (("ft2", float_inlet2))
-            (("in2", int_inlet1)));
+            (("in2", int_inlet1))
+            (("test_output", test_output))
+            , 1 // outlet
+            );
 }
 
