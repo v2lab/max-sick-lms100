@@ -31,6 +31,8 @@ MXX_CLASS(Lms100)
     void display(long mask);
     void set_scan_cfg(long mode);
     void set_access_mode(long mode);
+    void bang();
+    void scan(long on);
 
     void recv();
     void sendChannelData(int ch_idx, int data_size, const float * data);

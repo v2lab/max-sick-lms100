@@ -327,6 +327,16 @@ void Lms100::set_access_mode(long mode)
     }
 }
 
+void Lms100::bang()
+{
+    SEND("RN", "LMDscandata");
+}
+
+void Lms100::scan(long on)
+{
+    SEND("RN", "LMDscandata", on);
+}
+
 typedef std::map<int, std::string> Enum;
 Enum access_mode_map = map_list_of
     (0,"run")
@@ -479,6 +489,8 @@ int main()
             (("display", display))
             (("set-scan-cfg", set_scan_cfg))
             (("set-access-mode", set_access_mode))
+            (("bang", bang))
+            (("scan", scan))
             , 5 // n outlets
             );
 
