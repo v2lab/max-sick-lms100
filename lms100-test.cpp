@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <vector>
+#include <deque>
 #include <map>
 
 using boost::lexical_cast;
@@ -13,8 +14,8 @@ using boost::lexical_cast;
 std::string parse(const std::string& str, const Lms100::ChannelReceiver& channel_receiver = NULL)
 {
     std::string res = "";
-    std::vector< mxx::Atomic > lst = Lms100::parseMsg(str, channel_receiver);
-    std::vector< mxx::Atomic >::iterator it = lst.begin();
+    std::deque< mxx::Atomic > lst = Lms100::parseMsg(str, channel_receiver);
+    std::deque< mxx::Atomic >::iterator it = lst.begin();
     for(; it != lst.end() ; ++it) {
         if (res != "") res += ' ';
         res += lexical_cast<std::string>(*it);
@@ -38,8 +39,8 @@ BOOST_AUTO_TEST_CASE( parser_test )
 {
     BOOST_CHECK_EQUAL( parse("RANDOM NOISE"), "unknown-message RANDOM NOISE");
 
-    BOOST_CHECK_EQUAL( parse("AN mLMLSetDisp 0"), "display failed" );
-    BOOST_CHECK_EQUAL( parse("AN mLMLSetDisp 1"), "display ok" );
+    BOOST_CHECK_EQUAL( parse("AN mLMLSetDisp 0"), "NAK display" );
+    BOOST_CHECK_EQUAL( parse("AN mLMLSetDisp 1"), "ACK display" );
 
     BOOST_CHECK_EQUAL( parse("AN GetAccessMode 0"), "access-mode run");
     BOOST_CHECK_EQUAL( parse("AN GetAccessMode 1"), "access-mode operator");
@@ -47,19 +48,19 @@ BOOST_AUTO_TEST_CASE( parser_test )
     BOOST_CHECK_EQUAL( parse("AN GetAccessMode 3"), "access-mode authorized-client");
     BOOST_CHECK_EQUAL( parse("AN GetAccessMode 4"), "access-mode service");
 
-    BOOST_CHECK_EQUAL( parse("AN SetAccessMode 0"), "set-access-mode failed");
-    BOOST_CHECK_EQUAL( parse("AN SetAccessMode 1"), "set-access-mode ok");
+    BOOST_CHECK_EQUAL( parse("AN SetAccessMode 0"), "NAK set-access-mode");
+    BOOST_CHECK_EQUAL( parse("AN SetAccessMode 1"), "ACK set-access-mode");
 
-    BOOST_CHECK_EQUAL( parse("AN Run 0"), "run 0");
-    BOOST_CHECK_EQUAL( parse("AN Run 1"), "run 1");
+    BOOST_CHECK_EQUAL( parse("AN Run 0"), "NAK run");
+    BOOST_CHECK_EQUAL( parse("AN Run 1"), "ACK run");
 
     BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 0 12345678 FF 12345678 12345678 12345678"),
-            "set-scan-cfg ok 305419896 255 305419896 305419896 305419896");
-    BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 1"), "set-scan-cfg bad-frequency");
-    BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 2"), "set-scan-cfg bad-angular-resolution");
-    BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 3"), "set-scan-cfg bad-freq-and-resolution");
-    BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 4"), "set-scan-cfg bad-area");
-    BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 5"), "set-scan-cfg other-error");
+            "ACK set-scan-cfg ok 305419896 255 305419896 305419896 305419896");
+    BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 1"), "NAK set-scan-cfg bad-frequency");
+    BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 2"), "NAK set-scan-cfg bad-angular-resolution");
+    BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 3"), "NAK set-scan-cfg bad-freq-and-resolution");
+    BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 4"), "NAK set-scan-cfg bad-area");
+    BOOST_CHECK_EQUAL( parse("AN mLMPsetscancfg 5"), "NAK set-scan-cfg other-error");
 
     BOOST_CHECK_EQUAL( parse("EA LMDscandata 0"), "scanning 0");
     BOOST_CHECK_EQUAL( parse("EA LMDscandata 1"), "scanning 1");
@@ -67,6 +68,8 @@ BOOST_AUTO_TEST_CASE( parser_test )
     BOOST_CHECK_EQUAL( parse("RA 8 0"), "device-ready 0");
     BOOST_CHECK_EQUAL( parse("RA 8 1"), "device-ready 1");
     BOOST_CHECK_EQUAL( parse("RA 8 2"), "device-ready 0"); // anything but 1 is not-ready
+
+    BOOST_CHECK_EQUAL( parse("WA F1"), "ACK set-mean-filter");
 
     BOOST_CHECK_EQUAL( parse("RA STlms 0 0 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
             "device-status undefined 1 bar quux 294191052 294191052 294191052");
@@ -90,9 +93,9 @@ BOOST_AUTO_TEST_CASE( parser_test )
             "device-status reserved 0 bar quux 294191052 294191052 294191052");
     BOOST_CHECK_EQUAL( parse("RA STlms 9 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
             "device-status reserved 0 bar quux 294191052 294191052 294191052");
-    BOOST_CHECK_EQUAL( parse("RA STlms 10 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
+    BOOST_CHECK_EQUAL( parse("RA STlms A 2 foo bar baz quux 1188FFCC 1188FFCC 1188FFCC"),
             "device-status reserved 0 bar quux 294191052 294191052 294191052");
-    BOOST_CHECK_EQUAL( parse("RA STlms 11 2 foo bar baz quux FFFFFFFF FFFFFFFF FFFFFFFF"),
+    BOOST_CHECK_EQUAL( parse("RA STlms B 2 foo bar baz quux FFFFFFFF FFFFFFFF FFFFFFFF"),
  "device-status reserved 0 bar quux 4.29497e+09 4.29497e+09 4.29497e+09");
 
     BOOST_CHECK_EQUAL( parse("RA LMPscancfg FFFFFFFF FF FFFFFFFF FFFFFFFF FFFFFFFF"),

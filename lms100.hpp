@@ -3,6 +3,7 @@
 
 #include "maxxx.hpp"
 
+#include <deque>
 #include <vector>
 #include <string>
 #include <boost/function.hpp>
@@ -10,6 +11,8 @@
 MXX_CLASS(Lms100)
 {
     typedef boost::function<void(int,int,const float*)> ChannelReceiver;
+
+    static const int msg_out = 4;
 
     static std::string STX, ETX;
 
@@ -41,7 +44,7 @@ MXX_CLASS(Lms100)
 
 #define SEND(head, ...) send_impl( (list_of(mxx::Atomic(head)), ## __VA_ARGS__) )
 
-    static std::vector<mxx::Atomic> parseMsg(const std::string& reply,
+    static std::deque<mxx::Atomic> parseMsg(const std::string& reply,
             const Lms100::ChannelReceiver& chrecv = NULL);
 
     // SICK data type convertions

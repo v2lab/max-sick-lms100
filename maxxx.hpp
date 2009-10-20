@@ -18,6 +18,7 @@
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/variant.hpp>
+#include <boost/assign.hpp>
 
 #define METHOD_ADAPTOR_PRE() try {
 #define METHOD_ADAPTOR_POST() } catch(...) { \
@@ -48,6 +49,10 @@ namespace mxx {
     };
 
     typedef variant< long, float, std::string > Atomic;
+/*
+ * where a boost::assign container of atomics is expected this macro can be used
+ */
+#define MXX_LIST(head,...) (boost::assign::list_of(mxx::Atomic(head)), ## __VA_ARGS__)
 
     template< typename TYPE > static inline t_atom to_atom( const TYPE& );
     template<> static inline t_atom to_atom<long>( const long& i ) { t_atom a; atom_setlong(&a, i); return a; }
@@ -220,19 +225,7 @@ namespace mxx {
             }
         }
 
-        template < typename Container >
-        void outlet(int i, const std::string& sym, Container argv)
-        {
-            if ( i < outlets.size() ) {
-                int n = argv.size();
-                t_atom symsym = to_atom(sym);
-                t_atom array[n];
-                std::transform(argv.begin(), argv.end(), array, &mxx::to_atom<mxx::Atomic>);
-                outlet_anything( outlets[i], &symsym, n, array);
-            } else {
-                postError("otlet index out of range");
-            }
-        }
+#define OUTLET(i,...) outlet(i,MXX_LIST( __VA_ARGS__ ))
 
         void outlet(int i, int n, const float* data)
         {
@@ -243,6 +236,7 @@ namespace mxx {
 
             t_atom array[n];
             atom_setfloat_array(n,array,n,const_cast<float*>(data));
+            // FIXME!!!!
             outlet_anything( outlets[i], gensym("channel"), n, array);
         }
 

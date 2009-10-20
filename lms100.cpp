@@ -25,6 +25,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include <iostream>
+#include <deque>
 
 using namespace boost::assign;
 using boost::lexical_cast;
@@ -93,7 +94,8 @@ void Lms100::connect( const char * _connect_, long argc, t_atom * argv )
 
     qelem_set(recvQueue);
 
-    postMessage("connected to %s:%d", host, port);
+    //postMessage("connected to %s:%d", host, port);
+    OUTLET(msg_out, "connected");
 }
 
 void Lms100::disconnect()
@@ -217,7 +219,7 @@ void Lms100::recv()
         int parsed = 0;
         while(i != end) {
             std::string reply( *i++ );
-            std::vector<mxx::Atomic> to_spit = parseMsg(reply, boost::bind(&Lms100::sendChannelData, this, _1, _2, _3));
+            std::deque<mxx::Atomic> to_spit = parseMsg(reply, boost::bind(&Lms100::sendChannelData, this, _1, _2, _3));
             if (to_spit.size()>0)
                 outlet(4, to_spit);
             parsed += STX.length() + reply.length() + ETX.length();
@@ -239,26 +241,49 @@ void Lms100::sendChannelData(int ch_idx, int data_size, const float * data)
     outlet(ch_idx,data_size,data);
 }
 
-struct push_back_ok_a {
-    std::vector<mxx::Atomic> & vec;
+template < typename Container >
+struct push_back_ok_impl {
+    Container & vec;
     int ok;
-    push_back_ok_a(std::vector<mxx::Atomic>& vec_, int ok_ = 1) : vec(vec_), ok(ok_) {}
+    push_back_ok_impl(Container & vec_, int ok_ = 1) : vec(vec_), ok(ok_) {}
     void operator()(int val) const { vec.push_back( (val == ok)?"ok":"failed" ); }
 };
+template < typename Container >
+push_back_ok_impl<Container> push_back_ok_a(Container & cont, int ok = 1)
+{
+    return push_back_ok_impl<Container>(cont, ok);
+}
 
-struct push_back_atomic_a {
-    std::vector<mxx::Atomic> & vec;
-    push_back_atomic_a(std::vector<mxx::Atomic>& vec_) : vec(vec_) {}
-    void operator()(mxx::Atomic val) const { vec.push_back(val); }
-    void operator()(long val) const { vec.push_back(val); }
-    void operator()(int val) const { vec.push_back((long)val); }
-    void operator()(unsigned val) const { vec.push_back((long)val); }
+template < typename Container >
+struct ack_impl {
+    Container & vec;
+    int ok;
+    ack_impl(Container & vec_, int ok_ = 1) : vec(vec_), ok(ok_) {}
+    void operator()(int val) const { vec.push_front( (val == ok)?"ACK":"NAK" ); }
+};
+template < typename Container >
+ack_impl<Container> ack_a(Container & cont, int ok = 1)
+{
+    return ack_impl<Container>(cont, ok);
+}
+
+template < typename Container >
+struct push_back_str_impl {
+    Container & vec;
+    push_back_str_impl(Container & vec_) : vec(vec_) {}
     void operator()(const char* const& begin, const char* const& end) const { vec.push_back( std::string(begin,end) ); }
 };
+template < typename Container >
+push_back_str_impl<Container> push_back_str_a(Container & cont)
+{
+    return push_back_str_impl<Container>(cont);
+}
 
-struct push_back_u32_a {
-    std::vector<mxx::Atomic> & vec;
-    push_back_u32_a(std::vector<mxx::Atomic>& vec_) : vec(vec_) {}
+
+template < typename Container >
+struct push_back_u32_impl {
+    Container & vec;
+    push_back_u32_impl(Container & vec_) : vec(vec_) {}
     void operator()(unsigned val) const
     {
         if (val <= INT32_MAX)
@@ -268,20 +293,31 @@ struct push_back_u32_a {
             vec.push_back( (float)val );
     }
 };
+template < typename Container >
+push_back_u32_impl<Container> push_back_u32_a(Container & cont)
+{
+    return push_back_u32_impl<Container>(cont);
+}
 
-struct push_back_int_a {
-    std::vector<mxx::Atomic> & vec;
-    push_back_int_a(std::vector<mxx::Atomic>& vec_) : vec(vec_) {}
+template < typename Container >
+struct push_back_int_impl {
+    Container & vec;
+    push_back_int_impl(Container & vec_) : vec(vec_) {}
     void operator()(unsigned val) const { vec.push_back( *(long*)(&val) ); }
 };
+template < typename Container >
+push_back_int_impl<Container> push_back_int_a(Container & cont)
+{
+    return push_back_int_impl<Container>(cont);
+}
 
-template< typename KEY >
-struct push_back_mapped_a {
+template< typename Container, typename KEY >
+struct push_back_mapped_impl {
     typedef std::map<KEY, std::string> dict_t;
-    std::vector<mxx::Atomic> & vec;
+    Container & vec;
     dict_t dict;
     const char * def;
-    push_back_mapped_a( std::vector<mxx::Atomic>& vec_, const dict_t& dict_, const char* def_ = NULL )
+    push_back_mapped_impl( Container & vec_, const dict_t& dict_, const char* def_ = NULL )
         : vec(vec_), dict(dict_), def(def_) {}
     void operator()(KEY val) const {
         typename dict_t::const_iterator it = dict.find(val);
@@ -290,18 +326,29 @@ struct push_back_mapped_a {
         else vec.push_back("unknown");
     }
 };
+template < typename Container, typename KEY >
+push_back_mapped_impl<Container,KEY> push_back_mapped_a(Container & cont, const std::map<KEY, std::string>& dict, const char* def = NULL)
+{
+    return push_back_mapped_impl<Container,KEY>(cont, dict, def);
+}
 
-struct push_back_bool_a {
+template < typename Container >
+struct push_back_bool_impl {
     typedef std::map<int, std::string> dict_t;
-    std::vector<mxx::Atomic> & vec;
+    Container & vec;
 
     int true_val;
 
-    push_back_bool_a( std::vector<mxx::Atomic>& vec_, int true_val_ = 1)
+    push_back_bool_impl( Container & vec_, int true_val_ = 1)
         : vec(vec_), true_val(true_val_) {}
 
     void operator()(int val) const { vec.push_back( (val == true_val) ? 1l : 0l); }
 };
+template < typename Container >
+push_back_bool_impl<Container> push_back_bool_a(Container & cont, int true_ = 1)
+{
+    return push_back_bool_impl<Container>(cont, true_);
+}
 
 struct send_data_a {
     Lms100::ChannelReceiver const& recv;
@@ -322,7 +369,7 @@ void Lms100::set_scan_cfg(long mode)
         b = ((mode==0) ? 2500 : 5000);
 
     set_access_mode(3);
-    SEND("MN", "mLMPsetscan", a, "1", b, "FFF92230", "225510");
+    SEND("MN", "mLMPsetscancfg", a, "1", b, "FFF92230", "225510");
 
     set_access_mode(0);
 }
@@ -357,7 +404,7 @@ void Lms100::scan(long on)
     SEND("EN", "LMDscandata", on);
 }
 
-typedef std::map<int, std::string> Enum;
+typedef std::map<unsigned, std::string> Enum;
 Enum access_mode_map = map_list_of
     (0,"run")
     (1,"operator")
@@ -387,16 +434,23 @@ Enum device_status_map = map_list_of
     (10,"reserved")
     (11,"reserved");
 
+Enum error_map = map_list_of
+    (1,"Permission Denied")
+    (2,"Unknown Command")
+    (3,"Unknown Request")
+    (4,"Invalid Parameter Value")
+    (8,"Missing Parameter(s)")
+    (10,"Permission Denied");
+
 using namespace BOOST_SPIRIT_CLASSIC_NS;
 using namespace phoenix;
 
 struct LmsParser : public grammar<LmsParser>
 {
 
-    std::vector<mxx::Atomic>& vec;
+    std::deque<mxx::Atomic>& vec;
     const Lms100::ChannelReceiver& channel_receiver;
-    LmsParser( std::vector<mxx::Atomic>& vec_, const Lms100::ChannelReceiver& channel_receiver_ ) : vec(vec_), channel_receiver(channel_receiver_) {}
-
+    LmsParser( std::deque<mxx::Atomic>& vec_, const Lms100::ChannelReceiver& channel_receiver_ ) : vec(vec_), channel_receiver(channel_receiver_) {}
 
     template <typename ScannerT>
     struct definition
@@ -408,14 +462,15 @@ struct LmsParser : public grammar<LmsParser>
             float chdata[LMS_MAX_SAMPLES_PER_SCAN], *pchdata = chdata;
 
 #define STR2STR(a,b) str_p(a)[push_back_a(self.vec, b) ]
-#define ENUM(dict) int_p[ push_back_mapped_a<int>(self.vec, dict) ]
+#define ENUM(dict,...) hex_p[ push_back_mapped_a(self.vec, dict, ## __VA_ARGS__) ]
             full_grammar =
-                str_p("AN") >> (
-                        STR2STR("mLMLSetDisp", "display") >> ok
-                        | STR2STR("SetAccessMode", "set-access-mode") >> ok
-                        | STR2STR("Run", "run") >> bool_1
+                STR2STR("FA","NAK") >> ENUM(error_map,"unknown")
+                | str_p("AN") >> (
+                        STR2STR("mLMLSetDisp", "display") >> ack
+                        | STR2STR("SetAccessMode", "set-access-mode") >> ack
+                        | STR2STR("Run", "run") >> ack
                         | STR2STR("GetAccessMode", "access-mode") >> ENUM(access_mode_map)
-                        | STR2STR("mLMPsetscancfg", "set-scan-cfg") >> ENUM(scan_cfg_status_map) >> !(u32 >> u32 >> u32 >> u32 >> u32)
+                        | STR2STR("mLMPsetscancfg", "set-scan-cfg") >> ENUM(scan_cfg_status_map)[ack_a(self.vec,0)] >> !(u32 >> u32 >> u32 >> u32 >> u32)
                         )
                 | str_p("EA") >> (
                         STR2STR("LMDscandata", "scanning") >> bool_1
@@ -427,16 +482,18 @@ struct LmsParser : public grammar<LmsParser>
                         | STR2STR("F1", "mean-filter") >> bool_1 >> u8 >> u8
                         | scan_data
                         )
+                | STR2STR("WA","ACK") >> STR2STR("F1","set-mean-filter")
                 | str_p("SN") >> scan_data;
 
             u32 = hex_p[push_back_u32_a(self.vec)];
             u8 = hex_p[push_back_int_a(self.vec)]; // convert to long since max knows no better
             i32 = hex_p[push_back_int_a(self.vec)];
             ignore = lexeme_d[+graph_p];
-            str = ignore[ push_back_atomic_a(self.vec) ];
+            str = lexeme_d[+graph_p][ push_back_str_a(self.vec) ];
             bool_1 = int_p[push_back_bool_a(self.vec)];
             bool_0 = int_p[push_back_bool_a(self.vec, 0)];
             ok = int_p[push_back_ok_a(self.vec)];
+            ack = int_p[ack_a(self.vec)];
             scan_data = str_p("LMDscandata")
                 >> repeat_p(16)[ignore]
                 >> int_p[ var(i) = arg1 ] >> repeat_p(boost::ref(i))[ ignore >> ignore ] // encoders
@@ -466,7 +523,7 @@ struct LmsParser : public grammar<LmsParser>
 
         rule<ScannerT> full_grammar,
             ignore, str,
-            bool_1, bool_0, ok,
+            bool_1, bool_0, ok, ack,
             u32, u8, i32,
             scan_data, scan_data_channel;
 
@@ -474,13 +531,10 @@ struct LmsParser : public grammar<LmsParser>
     };
 };
 
-std::vector<mxx::Atomic> Lms100::parseMsg(const std::string& reply,
+std::deque<mxx::Atomic> Lms100::parseMsg(const std::string& reply,
         const Lms100::ChannelReceiver& chrecv )
 {
-    std::vector< mxx::Atomic > argv;
-
-    // FIXME: this should work in tests just as well
-    //postMessage("reply %s\n", reply.c_str());
+    std::deque< mxx::Atomic > argv;
 
     LmsParser parser(argv, chrecv);
 
@@ -489,12 +543,7 @@ std::vector<mxx::Atomic> Lms100::parseMsg(const std::string& reply,
     if (info.full)
         return argv;
     else
-        if (argv.size() == 0)
-            return list_of(std::string("unknown-message"))(reply);
-        else {
-            std::cerr << "*** Parsed this:" << std::string( reply.c_str(), info.stop) << "\n";
-            return list_of(std::string("misformed-message"))(reply);
-        }
+        return MXX_LIST( argv.size() ? "misformed-message" : "unknown-message", reply );
 }
 
 #ifndef TESTING
