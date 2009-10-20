@@ -7,7 +7,7 @@ using namespace boost::assign;
 MXX_CLASS(Hello) {
     char * name;
 
-    Hello() : name("Moshe") { post("Default hello_maxxx constructor called\n"); }
+    Hello() : name("Moshe") { postMessage("Default hello_maxxx constructor called\n"); }
 
     virtual void setup(long argc, t_atom * argv)
     {
@@ -16,16 +16,16 @@ MXX_CLASS(Hello) {
         }
     }
 
-    virtual ~Hello() { post("hello_maxxx destructor called\n"); }
-    void i_am(const char * name) { post("hi there, %s. I am %s\n", name, this->name); }
-    void bang() { post("I've got bang!\n"); }
-    void _int(long i) { post("int %d\n", i); }
-    void _float(float f) { post("float %f\n", f); }
-    void test2(long i, double f) { post("tested %d, %f\n", i, f); }
+    virtual ~Hello() { postMessage("hello_maxxx destructor called\n"); }
+    void i_am(const char * name) { postMessage("hi there, %s. I am %s\n", name, this->name); }
+    void bang() { postMessage("I've got bang!\n"); }
+    void _int(long i) { postMessage("int %d\n", i); }
+    void _float(float f) { postMessage("float %f\n", f); }
+    void test2(long i, double f) { postMessage("tested %d, %f\n", i, f); }
     void test(long i, double f, const char * s)
-    { post("tested %d, %f, %s\n", i, f, s); }
-    void int_inlet1(long i) { post("received %d in a second inlet\n", i); }
-    void float_inlet2(float f) { post("received %f in a third inlet\n", f); }
+    { postMessage("tested %d, %f, %s\n", i, f, s); }
+    void int_inlet1(long i) { postMessage("received %d in a second inlet\n", i); }
+    void float_inlet2(float f) { postMessage("received %f in a third inlet\n", f); }
 
     void test_output() {
         std::vector< mxx::Atomic > printme = list_of(mxx::Atomic("hello"))(mxx::Atomic("goodby"));

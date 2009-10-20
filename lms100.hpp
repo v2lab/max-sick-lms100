@@ -47,7 +47,7 @@ MXX_CLASS(Lms100)
     // SICK data type convertions
     template < typename T > struct SickTraits { static const char * fmt; };
 
-    template < typename T > static std::string sickFormat(T val)
+    template < typename T > std::string sickFormat(T val) const
     {
         const size_t len = 32; // this version is only used for long and float
         char buffer[ len ];

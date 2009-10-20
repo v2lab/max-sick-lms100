@@ -31,15 +31,14 @@ using boost::lexical_cast;
 
 template<> const char * Lms100::SickTraits< long >::fmt = "%lX";
 template<> const char * Lms100::SickTraits< float >::fmt = "%f";
-template <> std::string Lms100::sickFormat(char * val) { return val; }
-template <> std::string Lms100::sickFormat(t_atom * atom)
+template <> std::string Lms100::sickFormat(char * val) const { return val; }
+template <> std::string Lms100::sickFormat(t_atom * atom) const
 {
     switch(atom_gettype(atom)) {
         case A_LONG: return sickFormat(atom_getlong(atom));
         case A_FLOAT: return sickFormat(atom_getfloat(atom));
         case A_SYM: return sickFormat(atom_getsym(atom)->s_name);
-        default: postError("unsupported atom type");
-                 return "";
+        default: postError("unsupported atom type"); return "";
     }
 }
 std::string Lms100::STX = "\x2s", Lms100::ETX = "\x3";
@@ -127,7 +126,7 @@ void Lms100::send_meth(const char * _send_, long argc, t_atom * argv)
 
     if (sock < 0) {
         postError("can't send, connect first");
-        postMessage("would have sent '%s'", buffer.c_str());
+        postWarning("would have sent '%s'", buffer.c_str());
         return;
     }
 
@@ -155,7 +154,7 @@ void Lms100::send_impl( const std::vector< mxx::Atomic >& argv )
 
     if (sock < 0) {
         postError("can't send, connect first");
-        postMessage("would have sent '%s'", buffer.c_str());
+        postWarning("would have sent '%s'", buffer.c_str());
         return;
     }
 

@@ -21,7 +21,7 @@
 
 #define METHOD_ADAPTOR_PRE() try {
 #define METHOD_ADAPTOR_POST() } catch(...) { \
-    error("internal error: unhandled exception\n"); \
+    object_error(&self.wrapper->ob, "internal error: unhandled exception\n"); \
 }
 #include "method_adaptor.hpp"
 
@@ -99,6 +99,25 @@ struct auto_regger< void(*)(WRAPPER*, t_symbol *, long, t_atom*), 4 > {
 
 namespace mxx {
 
+    /*
+     * this allows us to "overload" macros depending on context they are called
+     * in
+     */
+    static inline const t_object * cur_obj() { return NULL; }
+
+// FIXME: in MSVC , __VA_ARGS__ works around stupid standard, in GCC we need ##
+#define postTpl(fun1,fun2,fmt,...) \
+    do { \
+        if (cur_obj()) \
+            fun1(const_cast<t_object*>(cur_obj()), fmt "\n", ## __VA_ARGS__); \
+        else \
+            fun2(fmt "\n", ## __VA_ARGS__); \
+    } while(0)
+#define postError(fmt, ...) postTpl(object_error, error, fmt, ## __VA_ARGS__)
+#define postWarning(fmt, ...) postTpl(object_warn, error, fmt, ## __VA_ARGS__)
+#define postMessage(fmt, ...) postTpl(object_post, post, fmt, ## __VA_ARGS__)
+#define postOSError() postError("[%d] %s", errno, strerror(errno))
+
     template<class T, mxx::namespace_t NS = mxx::BOX> struct wrapper;
 
     template<class T, mxx::namespace_t NS = mxx::BOX> struct base {
@@ -119,6 +138,12 @@ namespace mxx {
         wrapper_type * wrapper;
         std::deque<void*> outlets;
 
+        const t_object * cur_obj() const
+        {
+            if (wrapper) return &wrapper->ob;
+            else return NULL;
+        }
+
         // *tors
         base() : wrapper(0) { }
         ~base() { }
@@ -135,13 +160,6 @@ namespace mxx {
         }
 
         static const char * className() { return _class->c_sym->s_name; }
-// FIXME: in MSVC , __VA_ARGS__ works around stupid standard, in GCC we need ##
-#define postError(fmt, ...) error("%s: " fmt "\n", className(), ## __VA_ARGS__)
-#define postMessage(fmt, ...) post("%s: " fmt "\n", className(), ## __VA_ARGS__)
-#define postOSError() postError("[%d] %s", errno, strerror(errno))
-
-
-
         static int class_reg_finally(int outlets=0)
         {
             n_outlets = outlets;
@@ -290,6 +308,8 @@ namespace mxx {
             //post("Deallocating wrapped object using custom operator delete()\n");
             delete wrapper -> wrappee;
         }
+
+        const t_object * cur_obj() const { return &ob; }
     };
 
 }
