@@ -39,6 +39,13 @@ BOOST_AUTO_TEST_CASE( parser_test )
 {
     BOOST_CHECK_EQUAL( parse("RANDOM NOISE"), "unknown-message RANDOM NOISE");
 
+    BOOST_CHECK_EQUAL( parse("FA 1"), "NAK Permission Denied");
+    BOOST_CHECK_EQUAL( parse("FA 2"), "NAK Unknown Command");
+    BOOST_CHECK_EQUAL( parse("FA 3"), "NAK Unknown Request");
+    BOOST_CHECK_EQUAL( parse("FA 4"), "NAK Invalid Parameter Value");
+    BOOST_CHECK_EQUAL( parse("FA 8"), "NAK Missing Parameter(s)");
+    BOOST_CHECK_EQUAL( parse("FA A"), "NAK Permission Denied");
+
     BOOST_CHECK_EQUAL( parse("AN mLMLSetDisp 0"), "NAK display" );
     BOOST_CHECK_EQUAL( parse("AN mLMLSetDisp 1"), "ACK display" );
 
