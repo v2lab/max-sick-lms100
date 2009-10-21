@@ -18,10 +18,13 @@ FIND_PATH(PFUN_INCLUDE_DIR mem_fn_wrap.hpp PATHS .)
 INCLUDE_DIRECTORIES(${PFUN_INCLUDE_DIR})
 
 ################################################################################
-# build actual external
+# build actual externals
 ################################################################################
 ADD_MAX_EXTERNAL(v2_max.sick.lms100 lms100.cpp)
 TARGET_LINK_LIBRARIES(v2_max.sick.lms100 ${Boost_REGEX_LIBRARY})
+
+ADD_MAX_EXTERNAL(v2_max.blobs.naive blobs.naive.cpp)
+TARGET_LINK_LIBRARIES(v2_max.blobs.naive ${Boost_REGEX_LIBRARY})
 
 ################################################################################
 # testing
