@@ -28,8 +28,7 @@ MXX_CLASS(BlobsNaive) {
             if (val < epsilon) {
                 blob_end(i);
                 continue;
-            } else if (blob_steps
-                && (std::fabs(val - prev) > max_step_delta)) {
+            } else if (blob_steps && (std::fabs(val - prev) > max_step_delta)) {
                 // in a blob, but reached the end
                 blob_end(i);
                 // fall through to start a new blob
