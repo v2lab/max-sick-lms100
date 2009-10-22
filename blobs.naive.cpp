@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
+#define LMS_INFINITY 25000.
+
 MXX_CLASS(BlobsNaive) {
     float epsilon;
     float max_step_delta;
@@ -12,7 +14,7 @@ MXX_CLASS(BlobsNaive) {
     long blob_steps;
     float blob_min, blob_max;
 
-    BlobsNaive() : epsilon(1.f / 65535.f), max_step_delta(3e-3f), min_steps(3) { }
+    BlobsNaive() : epsilon(25.), max_step_delta(50.), min_steps(5) { }
 
     void set_max_step_delta(float msd) { max_step_delta = msd; }
     void set_min_steps(long ms) { min_steps = ms; }
@@ -21,7 +23,7 @@ MXX_CLASS(BlobsNaive) {
         float prev = 0.0, val = 0.0;
 
         blob_steps = 0;
-        blob_min = 1.0;
+        blob_min = LMS_INFINITY;
         blob_max = 0.0;
 
         for(long i = 0; i < argc; ++i) {
@@ -54,7 +56,7 @@ MXX_CLASS(BlobsNaive) {
             OUTLET(0, "blob", blob_min, blob_max, i-blob_steps, i);
 
         blob_steps = 0;
-        blob_min = 1.0;
+        blob_min = LMS_INFINITY;
         blob_max = 0.0;
     }
 };

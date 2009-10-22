@@ -458,6 +458,9 @@ struct LmsParser : public grammar<LmsParser>
         definition(LmsParser const& self)
         {
             int i, j, n, ch_idx;
+            union hex_float { unsigned u; float f; };
+            hex_float scaler;
+
 #define LMS_MAX_SAMPLES_PER_SCAN 1082
             float chdata[LMS_MAX_SAMPLES_PER_SCAN], *pchdata = chdata;
 
@@ -485,6 +488,18 @@ struct LmsParser : public grammar<LmsParser>
                 | STR2STR("WA","ACK") >> STR2STR("F1","set-mean-filter")
                 | str_p("SN") >> scan_data;
 
+            scan_data = str_p("LMDscandata")
+                >> repeat_p(16)[ignore]
+                >> int_p[ var(i) = arg1 ] >> repeat_p(boost::ref(i))[ ignore >> ignore ] // encoders
+                >> int_p[ var(i) = arg1 ] >> repeat_p(boost::ref(i))[ scan_data_channel ] // 16-bit channels
+                >> int_p[ var(i) = arg1 ] >> repeat_p(boost::ref(i))[ scan_data_channel ] // 8-bit channels
+                >> *ignore [ clear_a(self.vec) ]; // ignore the rest!
+            scan_data_channel =
+                select_p( str_p("DIST1"), str_p("RSSI1"), str_p("DIST2"), str_p("RSSI2") )[ assign_a(ch_idx) ]
+                >> hex_p[ var(scaler.u) = arg1 ] >> repeat_p(3)[ignore] >> hex_p[ var(j) = arg1 ]
+                >> for_p(var(n)=0 , var(n) < var(j) , var(n)++)[ hex_p[ var(chdata)[var(n)] = arg1 ] [ var(chdata)[var(n)] *= var(scaler.f) ] ]
+                    [ send_data_a(self.channel_receiver, ch_idx, n, pchdata) ];
+
             u32 = hex_p[push_back_u32_a(self.vec)];
             u8 = hex_p[push_back_int_a(self.vec)]; // convert to long since max knows no better
             i32 = hex_p[push_back_int_a(self.vec)];
@@ -494,17 +509,6 @@ struct LmsParser : public grammar<LmsParser>
             bool_0 = int_p[push_back_bool_a(self.vec, 0)];
             ok = int_p[push_back_ok_a(self.vec)];
             ack = int_p[ack_a(self.vec)];
-            scan_data = str_p("LMDscandata")
-                >> repeat_p(16)[ignore]
-                >> int_p[ var(i) = arg1 ] >> repeat_p(boost::ref(i))[ ignore >> ignore ] // encoders
-                >> int_p[ var(i) = arg1 ] >> repeat_p(boost::ref(i))[ scan_data_channel ] // 16-bit channels
-                >> int_p[ var(i) = arg1 ] >> repeat_p(boost::ref(i))[ scan_data_channel ] // 8-bit channels
-                >> *ignore [ clear_a(self.vec) ]; // ignore the rest!
-            scan_data_channel =
-                select_p( str_p("DIST1"), str_p("RSSI1"), str_p("DIST2"), str_p("RSSI2") )[ assign_a(ch_idx) ]
-                >> repeat_p(4)[ignore] >> hex_p[ var(j) = arg1 ]
-                >> for_p(var(n)=0 , var(n) < var(j) , var(n)++)[ hex_p[ var(chdata)[var(n)] = arg1 ] [ var(chdata)[var(n)] /= (float)0xFFFF ] ]
-                    [ send_data_a(self.channel_receiver, ch_idx, n, pchdata) ];
 #undef STR2STR
 #undef ENUM
 
