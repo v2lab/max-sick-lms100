@@ -394,6 +394,18 @@ void Lms100::set_access_mode(long mode)
     }
 }
 
+void Lms100::start_measurement()
+{
+    set_access_mode(3);
+    SEND("MN", "LMCstartmeas");
+    set_access_mode(0);
+}
+
+void Lms100::request_status()
+{
+    SEND("RN", "STlms");
+}
+
 void Lms100::bang()
 {
     SEND("RN", "LMDscandata");
@@ -472,6 +484,7 @@ struct LmsParser : public grammar<LmsParser>
                         STR2STR("mLMLSetDisp", "display") >> ack
                         | STR2STR("SetAccessMode", "set-access-mode") >> ack
                         | STR2STR("Run", "run") >> ack
+                        | STR2STR("LMCstartmeas", "start-measurement") >> ack_0
                         | STR2STR("GetAccessMode", "access-mode") >> ENUM(access_mode_map)
                         | STR2STR("mLMPsetscancfg", "set-scan-cfg") >> ENUM(scan_cfg_status_map)[ack_a(self.vec,0)] >> !(u32 >> u32 >> u32 >> u32 >> u32)
                         )
@@ -509,6 +522,7 @@ struct LmsParser : public grammar<LmsParser>
             bool_0 = int_p[push_back_bool_a(self.vec, 0)];
             ok = int_p[push_back_ok_a(self.vec)];
             ack = int_p[ack_a(self.vec)];
+            ack_0 = int_p[ack_a(self.vec, 0)];
 #undef STR2STR
 #undef ENUM
 
@@ -527,7 +541,7 @@ struct LmsParser : public grammar<LmsParser>
 
         rule<ScannerT> full_grammar,
             ignore, str,
-            bool_1, bool_0, ok, ack,
+            bool_1, bool_0, ok, ack, ack_0,
             u32, u8, i32,
             scan_data, scan_data_channel;
 
@@ -565,6 +579,8 @@ int main()
             (("set-mean-filter", set_mean_filter))
             (("bang", bang))
             (("scan", scan))
+            (("start-measurement", start_measurement))
+            (("request-status", request_status))
             , 5 // n outlets
             );
 

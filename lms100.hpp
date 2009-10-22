@@ -37,6 +37,8 @@ MXX_CLASS(Lms100)
     void bang();
     void scan(long on);
     void set_mean_filter(long mode);
+    void start_measurement();
+    void request_status();
 
     void recv();
     void sendChannelData(int ch_idx, int data_size, const float * data);
