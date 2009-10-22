@@ -14,6 +14,8 @@ MXX_CLASS(BlobsNaive) {
 
     BlobsNaive() : epsilon(1.f / 65535.f), max_step_delta(3e-3f), min_steps(3) { }
 
+    void set_max_step_delta(float msd) { max_step_delta = msd; }
+    void set_min_steps(long ms) { min_steps = ms; }
     void scan(const char * _scan_, long argc, t_atom * argv)
     {
         float prev = 0.0, val = 0.0;
@@ -62,5 +64,7 @@ int main()
     MXX_REGISTER_CLASS(
             BlobsNaive, "v2_max.blobs.naive",
             (("scan",scan))
+            (("max-step-delta", set_max_step_delta))
+            (("min-steps", set_min_steps))
             , 2 );
 }
