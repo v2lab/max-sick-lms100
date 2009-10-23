@@ -1,9 +1,9 @@
 {
 	"patcher" : 	{
 		"fileversion" : 1,
-		"rect" : [ 43.0, 48.0, 1066.0, 605.0 ],
+		"rect" : [ 145.0, 104.0, 1066.0, 605.0 ],
 		"bglocked" : 0,
-		"defrect" : [ 43.0, 48.0, 1066.0, 605.0 ],
+		"defrect" : [ 145.0, 104.0, 1066.0, 605.0 ],
 		"openrect" : [ 0.0, 0.0, 0.0, 0.0 ],
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -60,7 +60,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"fontname" : "Arial",
-					"patching_rect" : [ 0.0, 120.0, 131.0, 46.0 ],
+					"patching_rect" : [ 0.0, 121.0, 131.0, 46.0 ],
 					"id" : "obj-115",
 					"outlettype" : [ "" ]
 				}
@@ -785,7 +785,6 @@
 						"imprint" : 0,
 						"enablehscroll" : 1,
 						"enablevscroll" : 1,
-						"visible" : 1,
 						"boxes" : [ 							{
 								"box" : 								{
 									"maxclass" : "newobj",
@@ -2297,9 +2296,9 @@
 									"id" : "obj-9",
 									"patcher" : 									{
 										"fileversion" : 1,
-										"rect" : [ 394.0, 131.0, 733.0, 358.0 ],
+										"rect" : [ 497.0, 479.0, 733.0, 358.0 ],
 										"bglocked" : 0,
-										"defrect" : [ 394.0, 131.0, 733.0, 358.0 ],
+										"defrect" : [ 497.0, 479.0, 733.0, 358.0 ],
 										"openrect" : [ 0.0, 0.0, 0.0, 0.0 ],
 										"openinpresentation" : 0,
 										"default_fontsize" : 10.0,
@@ -2468,13 +2467,13 @@
 , 											{
 												"box" : 												{
 													"maxclass" : "message",
-													"text" : "reset, shapeorient 0 0 -10.6, color 0.3 1 0.3 0.5, moveto $1 $2, lineto 0 0, lineto $2 $2, moveto 0 0",
+													"text" : "reset, shapeorient 0 0 -10.6, glcolor 0.3 0.6 0.3 0.85, moveto $1 $2, lineto 0 0, lineto $2 $2, moveto 0 0",
 													"linecount" : 2,
 													"fontsize" : 10.0,
 													"numinlets" : 2,
 													"numoutlets" : 1,
 													"fontname" : "Monaco",
-													"patching_rect" : [ 128.0, 128.0, 599.0, 31.0 ],
+													"patching_rect" : [ 128.0, 128.0, 587.0, 31.0 ],
 													"id" : "obj-6",
 													"outlettype" : [ "" ]
 												}
@@ -5298,12 +5297,12 @@
 , 							{
 								"box" : 								{
 									"maxclass" : "newobj",
-									"text" : "jit.gl.mesh radar @color 0. 0.7 0. 1. @draw_mode line_strip",
+									"text" : "jit.gl.mesh radar @color 0.5 1 0.75 1. @draw_mode line_strip",
 									"fontsize" : 10.0,
 									"numinlets" : 9,
 									"numoutlets" : 2,
 									"fontname" : "Monaco",
-									"patching_rect" : [ 192.0, 168.0, 365.0, 20.0 ],
+									"patching_rect" : [ 192.0, 168.0, 371.0, 20.0 ],
 									"id" : "obj-46",
 									"outlettype" : [ "jit_matrix", "" ]
 								}
@@ -5335,6 +5334,15 @@
 							}
  ],
 						"lines" : [ 							{
+								"patchline" : 								{
+									"source" : [ "obj-50", 0 ],
+									"destination" : [ "obj-46", 0 ],
+									"hidden" : 0,
+									"midpoints" : [  ]
+								}
+
+							}
+, 							{
 								"patchline" : 								{
 									"source" : [ "obj-8", 1 ],
 									"destination" : [ "obj-5", 0 ],
@@ -5383,15 +5391,6 @@
 								"patchline" : 								{
 									"source" : [ "obj-5", 0 ],
 									"destination" : [ "obj-7", 0 ],
-									"hidden" : 0,
-									"midpoints" : [  ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"source" : [ "obj-50", 0 ],
-									"destination" : [ "obj-46", 0 ],
 									"hidden" : 0,
 									"midpoints" : [  ]
 								}
