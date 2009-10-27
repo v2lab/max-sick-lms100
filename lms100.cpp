@@ -19,7 +19,7 @@
 #include <boost/spirit/include/classic_attribute.hpp>
 #include <boost/spirit/include/classic_for.hpp>
 #include <boost/spirit/include/classic_select.hpp>
-#include <boost/spirit/include/phoenix1_functions.hpp>
+#include <boost/spirit/include/phoenix1.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
@@ -510,7 +510,14 @@ struct LmsParser : public grammar<LmsParser>
             scan_data_channel =
                 select_p( str_p("DIST1"), str_p("RSSI1"), str_p("DIST2"), str_p("RSSI2") )[ assign_a(ch_idx) ]
                 >> hex_p[ var(scaler.u) = arg1 ] >> repeat_p(3)[ignore] >> hex_p[ var(j) = arg1 ]
-                >> for_p(var(n)=0 , var(n) < var(j) , var(n)++)[ hex_p[ var(chdata)[var(n)] = arg1 ] [ var(chdata)[var(n)] *= var(scaler.f) ] ]
+                >> for_p(var(n)=0 , var(n) < var(j) , var(n)++)[
+                    hex_p[
+                        if_(arg1 * var(scaler.f) < val(2e4f)) [
+                            var(chdata)[var(n)] = arg1 * var(scaler.f)
+                        ] .else_ [
+                            var(chdata)[var(n)] = val(0.0f)
+                        ] ]
+                    ]
                     [ send_data_a(self.channel_receiver, ch_idx, n, pchdata) ];
 
             u32 = hex_p[push_back_u32_a(self.vec)];
