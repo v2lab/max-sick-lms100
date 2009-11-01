@@ -512,10 +512,14 @@ struct LmsParser : public grammar<LmsParser>
                 >> hex_p[ var(scaler.u) = arg1 ] >> repeat_p(3)[ignore] >> hex_p[ var(j) = arg1 ]
                 >> for_p(var(n)=0 , var(n) < var(j) , var(n)++)[
                     hex_p[
-                        if_(arg1 * var(scaler.f) < val(2e4f)) [
+                        if_((arg1 > 0) && (arg1 * var(scaler.f) < val(2e4f))) [
                             var(chdata)[var(n)] = arg1 * var(scaler.f)
                         ] .else_ [
-                            var(chdata)[var(n)] = val(0.0f)
+                            if_(var(n) > 0) [
+                                var(chdata)[var(n)] = var(chdata)[ var(n)-1 ]
+                            ] .else_ [
+                                var(chdata)[var(n)] = val(0.0f)
+                            ]
                         ] ]
                     ]
                     [ send_data_a(self.channel_receiver, ch_idx, n, pchdata) ];
