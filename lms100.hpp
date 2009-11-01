@@ -12,7 +12,7 @@ MXX_CLASS(Lms100)
 {
     typedef boost::function<void(int,int,const float*)> ChannelReceiver;
 
-    static const int msg_out = 4;
+    static const int msg_out = 1;
 
     static std::string STX, ETX;
 

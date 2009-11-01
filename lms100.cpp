@@ -221,7 +221,7 @@ void Lms100::recv()
             std::string reply( *i++ );
             std::deque<mxx::Atomic> to_spit = parseMsg(reply, boost::bind(&Lms100::sendChannelData, this, _1, _2, _3));
             if (to_spit.size()>0)
-                outlet(4, to_spit);
+                outlet(msg_out, to_spit);
             parsed += STX.length() + reply.length() + ETX.length();
         }
         recvLeftover = recvLeftover.substr(parsed);
@@ -238,7 +238,7 @@ void Lms100::sendChannelData(int ch_idx, int data_size, const float * data)
         postError("internal: channel index out of range!");
         return;
     }
-    outlet(ch_idx,data_size,data);
+    outlet(0,data_size,data);
 }
 
 template < typename Container >
@@ -593,7 +593,7 @@ int main()
             (("scan", scan))
             (("start-measurement", start_measurement))
             (("request-status", request_status))
-            , 5 // n outlets
+            , 2 // n outlets
             );
 
 }
