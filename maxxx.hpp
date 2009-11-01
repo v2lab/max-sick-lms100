@@ -236,8 +236,7 @@ namespace mxx {
 
             t_atom array[n];
             atom_setfloat_array(n,array,n,const_cast<float*>(data));
-            // FIXME!!!!
-            outlet_anything( outlets[i], gensym("channel"), n, array);
+            outlet_list( outlets[i], 0, n, array);
         }
 
         virtual void setup(long argc, t_atom * argv)
