@@ -65,7 +65,7 @@ int main()
 {
     MXX_REGISTER_CLASS(
             BlobsNaive, "v2_max.blobs.naive",
-            (("scan",scan))
+            (("list", scan))
             (("max-step-delta", set_max_step_delta))
             (("min-steps", set_min_steps))
             , 2 );
