@@ -1,9 +1,9 @@
 {
 	"patcher" : 	{
 		"fileversion" : 1,
-		"rect" : [ 277.0, 53.0, 1101.0, 686.0 ],
+		"rect" : [ 153.0, 92.0, 1101.0, 686.0 ],
 		"bglocked" : 0,
-		"defrect" : [ 277.0, 53.0, 1101.0, 686.0 ],
+		"defrect" : [ 153.0, 92.0, 1101.0, 686.0 ],
 		"openrect" : [ 0.0, 0.0, 0.0, 0.0 ],
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -19,6 +19,48 @@
 		"enablevscroll" : 1,
 		"title" : "v2_max.sick.lms100 external help",
 		"boxes" : [ 			{
+				"box" : 				{
+					"maxclass" : "comment",
+					"text" : "scanner messages come out from the rightmost outlet",
+					"linecount" : 3,
+					"fontsize" : 12.0,
+					"numoutlets" : 0,
+					"fontname" : "Arial",
+					"patching_rect" : [ 338.0, 296.0, 128.0, 48.0 ],
+					"id" : "obj-19",
+					"numinlets" : 1
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"maxclass" : "comment",
+					"text" : "scan data comes out as lists from the first outlet",
+					"linecount" : 4,
+					"fontsize" : 12.0,
+					"numoutlets" : 0,
+					"fontname" : "Arial",
+					"patching_rect" : [ 16.0, 296.0, 86.0, 62.0 ],
+					"id" : "obj-16",
+					"numinlets" : 1
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"maxclass" : "comment",
+					"text" : "1. Connect to the scanner\n2. Configure its operation parameters\n3. Request a single scan or continuous scan mode",
+					"linecount" : 3,
+					"fontsize" : 12.0,
+					"numoutlets" : 0,
+					"fontname" : "Arial",
+					"patching_rect" : [ 16.0, 128.0, 363.0, 48.0 ],
+					"id" : "obj-14",
+					"numinlets" : 1
+				}
+
+			}
+, 			{
 				"box" : 				{
 					"maxclass" : "comment",
 					"text" : "Control and receive data from SICK LMS100 laser scanner",
@@ -118,7 +160,7 @@
 , 			{
 				"box" : 				{
 					"maxclass" : "comment",
-					"text" : "Back-/foreground segmentation, blob detection and rendering",
+					"text" : "Back-/foreground segmentation, blob detection and 2D rendering",
 					"linecount" : 2,
 					"fontsize" : 12.0,
 					"numoutlets" : 0,
@@ -7862,9 +7904,9 @@
 					"numinlets" : 2,
 					"patcher" : 					{
 						"fileversion" : 1,
-						"rect" : [ 450.0, 133.0, 434.0, 437.0 ],
+						"rect" : [ 1102.0, 478.0, 434.0, 437.0 ],
 						"bglocked" : 0,
-						"defrect" : [ 450.0, 133.0, 434.0, 437.0 ],
+						"defrect" : [ 1102.0, 478.0, 434.0, 437.0 ],
 						"openrect" : [ 0.0, 0.0, 0.0, 0.0 ],
 						"openinpresentation" : 0,
 						"default_fontsize" : 10.0,
@@ -8603,12 +8645,12 @@
 					"fontname" : "Arial",
 					"patching_rect" : [ 316.0, 208.0, 93.0, 20.0 ],
 					"id" : "obj-26",
-					"numinlets" : 1,
+					"numinlets" : 2,
 					"patcher" : 					{
 						"fileversion" : 1,
-						"rect" : [ 802.0, 473.0, 478.0, 277.0 ],
+						"rect" : [ 513.0, 593.0, 478.0, 277.0 ],
 						"bglocked" : 0,
-						"defrect" : [ 802.0, 473.0, 478.0, 277.0 ],
+						"defrect" : [ 513.0, 593.0, 478.0, 277.0 ],
 						"openrect" : [ 0.0, 0.0, 0.0, 0.0 ],
 						"openinpresentation" : 0,
 						"default_fontsize" : 10.0,
@@ -8630,7 +8672,7 @@
 									"numoutlets" : 2,
 									"outlettype" : [ "", "" ],
 									"fontname" : "Monaco",
-									"patching_rect" : [ 256.0, 32.0, 95.0, 20.0 ],
+									"patching_rect" : [ 256.0, 40.0, 95.0, 20.0 ],
 									"id" : "obj-43",
 									"numinlets" : 1
 								}
@@ -8638,15 +8680,13 @@
 							}
 , 							{
 								"box" : 								{
-									"maxclass" : "newobj",
-									"text" : "r from-scanner",
-									"fontsize" : 10.0,
+									"maxclass" : "inlet",
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
-									"fontname" : "Monaco",
-									"patching_rect" : [ 256.0, 8.0, 95.0, 20.0 ],
+									"patching_rect" : [ 256.0, 8.0, 25.0, 25.0 ],
 									"id" : "obj-40",
-									"numinlets" : 0
+									"numinlets" : 0,
+									"comment" : ""
 								}
 
 							}
@@ -8867,8 +8907,8 @@
  ],
 						"lines" : [ 							{
 								"patchline" : 								{
-									"source" : [ "obj-43", 0 ],
-									"destination" : [ "obj-19", 0 ],
+									"source" : [ "obj-40", 0 ],
+									"destination" : [ "obj-43", 0 ],
 									"hidden" : 0,
 									"midpoints" : [  ]
 								}
@@ -8876,8 +8916,8 @@
 							}
 , 							{
 								"patchline" : 								{
-									"source" : [ "obj-40", 0 ],
-									"destination" : [ "obj-43", 0 ],
+									"source" : [ "obj-43", 0 ],
+									"destination" : [ "obj-19", 0 ],
 									"hidden" : 0,
 									"midpoints" : [  ]
 								}
@@ -9592,7 +9632,7 @@
 					"outlettype" : [ "bang" ],
 					"hidden" : 1,
 					"fontname" : "Arial",
-					"patching_rect" : [ 384.0, 384.0, 60.0, 20.0 ],
+					"patching_rect" : [ 456.0, 384.0, 60.0, 20.0 ],
 					"id" : "obj-30",
 					"numinlets" : 1
 				}
@@ -9630,6 +9670,15 @@
 			}
  ],
 		"lines" : [ 			{
+				"patchline" : 				{
+					"source" : [ "obj-1", 1 ],
+					"destination" : [ "obj-26", 1 ],
+					"hidden" : 0,
+					"midpoints" : [ 317.5, 313.0, 335.0, 313.0, 335.0, 235.0, 412.0, 235.0, 412.0, 200.0, 399.5, 200.0 ]
+				}
+
+			}
+, 			{
 				"patchline" : 				{
 					"source" : [ "obj-1", 1 ],
 					"destination" : [ "obj-38", 1 ],
@@ -9760,7 +9809,7 @@
 					"source" : [ "obj-30", 0 ],
 					"destination" : [ "obj-45", 0 ],
 					"hidden" : 1,
-					"midpoints" : [ 393.5, 410.08493, 239.5, 410.08493 ]
+					"midpoints" : [ 465.5, 410.08493, 239.5, 410.08493 ]
 				}
 
 			}
@@ -9769,7 +9818,7 @@
 					"source" : [ "obj-30", 0 ],
 					"destination" : [ "obj-36", 0 ],
 					"hidden" : 1,
-					"midpoints" : [ 393.5, 410.450958, 200.5, 410.450958 ]
+					"midpoints" : [ 465.5, 410.450958, 200.5, 410.450958 ]
 				}
 
 			}
@@ -9778,7 +9827,7 @@
 					"source" : [ "obj-30", 0 ],
 					"destination" : [ "obj-35", 0 ],
 					"hidden" : 1,
-					"midpoints" : [ 393.5, 410.990387, 113.5, 410.990387 ]
+					"midpoints" : [ 465.5, 410.990387, 113.5, 410.990387 ]
 				}
 
 			}
@@ -9787,7 +9836,7 @@
 					"source" : [ "obj-30", 0 ],
 					"destination" : [ "obj-78", 0 ],
 					"hidden" : 1,
-					"midpoints" : [ 393.5, 410.08493, 163.5, 410.08493 ]
+					"midpoints" : [ 465.5, 410.08493, 163.5, 410.08493 ]
 				}
 
 			}
@@ -10012,7 +10061,7 @@
 					"source" : [ "obj-30", 0 ],
 					"destination" : [ "obj-54", 0 ],
 					"hidden" : 1,
-					"midpoints" : [ 393.5, 410.5, 494.5, 410.5 ]
+					"midpoints" : [ 465.5, 410.5, 494.5, 410.5 ]
 				}
 
 			}
@@ -10021,7 +10070,7 @@
 					"source" : [ "obj-30", 0 ],
 					"destination" : [ "obj-50", 0 ],
 					"hidden" : 1,
-					"midpoints" : [ 393.5, 410.5, 342.5, 410.5 ]
+					"midpoints" : [ 465.5, 410.5, 342.5, 410.5 ]
 				}
 
 			}
