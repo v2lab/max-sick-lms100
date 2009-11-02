@@ -13,9 +13,7 @@ SET(Boost_USE_STATIC_LIBS ON)
 FIND_PACKAGE(Boost 1.39.0 COMPONENTS regex unit_test_framework REQUIRED)
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 
-# find callback generator (need this because it will include itself)
-FIND_PATH(PFUN_INCLUDE_DIR mem_fn_wrap.hpp PATHS .)
-INCLUDE_DIRECTORIES(${PFUN_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(.)
 
 ################################################################################
 # build actual externals
@@ -25,6 +23,15 @@ TARGET_LINK_LIBRARIES(v2_max.sick.lms100 ${Boost_REGEX_LIBRARY})
 
 ADD_MAX_EXTERNAL(v2_max.blobs.naive blobs.naive.cpp)
 TARGET_LINK_LIBRARIES(v2_max.blobs.naive ${Boost_REGEX_LIBRARY})
+
+################################################################################
+# distribution
+################################################################################
+SET(CPACK_PACKAGE_VERSION 1.0)
+SET(CPACK_PACKAGE_VENDOR V2_Lab)
+SET(CPACK_SOURCE_IGNORE_FILES "/build/;/\\\\.git/;\\\\.mxo$;\\\\.dmg$")
+SET(CPACK_SOURCE_GENERATOR ZIP)
+INCLUDE(CPack)
 
 ################################################################################
 # testing
