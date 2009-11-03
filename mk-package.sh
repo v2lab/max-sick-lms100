@@ -3,7 +3,7 @@
 version=1.0
 dmg=v2_max.sick.lms100-${version}.dmg
 tmp_dmg=tmp.${dmg}
-label="LMS100 external for Max5"
+label="Laser Measurement System object for Max5"
 volume="/Volumes/${label}"
 externals_dst="/Applications/Max5/Cycling '74/max-externals"
 
@@ -30,7 +30,9 @@ hdiutil create -quiet -size 32m -fs HFS+ -volname "${label}" ${tmp_dmg} &&
 disk=`hdiutil attach ${tmp_dmg} | cut -f 1 | grep ^/dev | head -1` &&
 ln -s "${externals_dst}" "${volume}" &&
 (for f in ${dist_files} ; do echo "copying ${f} to the disk image"; cp -R ${f} "${volume}" ; done) &&
+(if [ -f DS_Store.in ] ; then cp DS_Store.in "${volume}/.DS_Store" ; fi) &&
+(if [ -f bg.tiff ] ; then mkdir -p "${volume}/.bg" ; cp bg.tiff "${volume}/.bg/background.tiff" ; fi) &&
 hdiutil detach -quiet ${disk} &&
-hdiutil convert -quiet ${tmp_dmg} -format UDZO -o ${dmg} &&
-rm ${tmp_dmg}
+hdiutil convert -quiet ${tmp_dmg} -format UDZO -o ${dmg} #&&
+#rm ${tmp_dmg}
 
