@@ -2,7 +2,7 @@
 
 Light detection and ranging (LIDAR) instruments provide a fast and accurate way to track objects in 2 dimensions. V2_Lab's v2_max.sick.lms100 object for Max makes the SICK's Laser Measurement System LIDAR available inside this popular media programming environment.
 
-Original code by Artem Baguinsky -- https://github.com/artm
+Original code by Artem Baguinsky -- https://github.com/artm \
 More info -- http://v2.nl/lab/projects/laser-measurement-system-object-for-max/intro
 
 Tested exclusively on MacOSX, works with Max7 and can be built for both 32bit and 64bit.
@@ -70,8 +70,11 @@ cmake -G "Xcode" ..
 mkdir build
 cd build
 ```
-* Configure and create the xcode project by running:
+* Configure by running:
 ```
 cmake ..
 ```
-* cmake --build ..
+* And build:
+```
+cmake --build ..
+```
