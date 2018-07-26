@@ -6,10 +6,11 @@ FUNCTION(ADD_MAX_EXTERNAL external)
 
 
   # 2018 BUILD: Change these paths to the downloaded MAX SDK from https://cycling74.s3.amazonaws.com/download/max-sdk-7.3.3.zip
+  # This is a bad way to configure this and should be fixed in the future but for now this allows you to build the code without problems.
   FIND_LIBRARY(LIB_MAX NAMES MaxAPI PATHS "/Users/davidjonas/Documents/Max 7/Packages/max-sdk-7.3.3/source/c74support/max-includes")
   SET(MAX_INCLUDE "/Users/davidjonas/Documents/Max 7/Packages/max-sdk-7.3.3/source/c74support/max-includes")
 
-  # Old version not building in 2018
+  # TODO: Old version, much better but demands more configuration for quick building will fix it in the future
   # FIND_LIBRARY(LIB_MAX MaxAPI)
   # FIND_PATH(MAX_INCLUDE ext_obex.h)
 
