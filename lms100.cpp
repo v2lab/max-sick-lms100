@@ -30,9 +30,17 @@
 using namespace boost::assign;
 using boost::lexical_cast;
 
-template<> const char * Lms100::SickTraits< long >::fmt = "%lX";
-template<> const char * Lms100::SickTraits< float >::fmt = "%f";
-template <> std::string Lms100::sickFormat(char * val) const { return val; }
+template <> const char * Lms100::SickTraits< long >::fmt = "%lX";
+template <> const size_t Lms100::SickTraits< long >::len = 32;
+template <> const char * Lms100::SickTraits< float >::fmt = "%f";
+template <> const size_t Lms100::SickTraits< float >::len = 32;
+template <> const char * Lms100::SickTraits< double >::fmt = "%d";
+template <> const size_t Lms100::SickTraits< double >::len = 64;
+template <> const char * Lms100::SickTraits< long long >::fmt = "%llu";
+template <> const size_t Lms100::SickTraits< long long >::len = 64;
+template <> std::string Lms100::sickFormat(char * val) const {
+    return val;
+}
 template <> std::string Lms100::sickFormat(t_atom * atom) const
 {
     switch(atom_gettype(atom)) {
@@ -94,7 +102,7 @@ void Lms100::connect( const char * _connect_, long argc, t_atom * argv )
 
     qelem_set(recvQueue);
 
-    //postMessage("connected to %s:%d", host, port);
+    postMessage("connected to %s:%d", host, port);
     OUTLET(msg_out, "connected");
 }
 

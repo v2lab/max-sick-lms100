@@ -50,13 +50,25 @@ MXX_CLASS(Lms100)
             const Lms100::ChannelReceiver& chrecv = NULL);
 
     // SICK data type convertions
-    template < typename T > struct SickTraits { static const char * fmt; };
+    template < typename T > struct SickTraits {
+        static const char * fmt;
+        static const size_t len;
+    };
 
     template < typename T > std::string sickFormat(T val) const
     {
-        const size_t len = 32; // this version is only used for long and float
+        const size_t len = SickTraits<T>::len;
         char buffer[ len ];
-        snprintf(buffer, len, SickTraits<T>::fmt, val);
+        try {
+            snprintf(buffer, len, SickTraits<T>::fmt, val);
+        } catch (const std::exception& e)
+        {
+            postError("Invalid atom format");
+            for (int i=0; i<len; i++)
+            {
+                buffer[i] = 0;
+            }
+        }
         return buffer;
     }
 
