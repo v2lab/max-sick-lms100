@@ -76,5 +76,5 @@ cmake ..
 ```
 * And build:
 ```
-cmake --build ..
+cmake --build .
 ```
