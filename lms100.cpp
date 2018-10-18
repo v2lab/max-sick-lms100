@@ -372,9 +372,9 @@ struct send_data_a {
 
 void Lms100::set_scan_cfg(long mode)
 {
-    long
-        a = ((mode==2) ? 5000 : 2500),
-        b = ((mode==0) ? 2500 : 5000);
+    std::string
+        a = ((mode==2) ? "+5000" : "+2500"),
+        b = ((mode==0) ? "+2500" : "+5000");
 
     set_access_mode(3);
     SEND("MN", "mLMPsetscancfg", a, "1", b, "FFF92230", "225510");
