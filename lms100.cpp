@@ -481,7 +481,10 @@ struct LmsParser : public grammar<LmsParser>
             union hex_float { unsigned u; float f; };
             hex_float scaler;
 
-#define LMS_MAX_SAMPLES_PER_SCAN 1082
+// JanM 20181024: seems that more data is fed into this buffer than expected
+// we just increase the size because it works...
+//#define LMS_MAX_SAMPLES_PER_SCAN 1082
+#define LMS_MAX_SAMPLES_PER_SCAN 2200
             float chdata[LMS_MAX_SAMPLES_PER_SCAN], *pchdata = chdata;
 
 #define STR2STR(a,b) str_p(a)[push_back_a(self.vec, b) ]
@@ -574,7 +577,6 @@ std::deque<mxx::Atomic> Lms100::parseMsg(const std::string& reply,
     std::deque< mxx::Atomic > argv;
 
     LmsParser parser(argv, chrecv);
-
     parse_info<> info = parse( reply.c_str(), parser, space_p);
 
     if (info.full)
